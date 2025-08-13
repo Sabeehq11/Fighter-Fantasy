@@ -1,7 +1,7 @@
-# CageSide Companion - Product Requirements Document
+# Fighter Fantasy - Product Requirements Document
 
 ## Executive Summary
-CageSide Companion is a web-based UFC companion application featuring real-time event tracking, comprehensive fighter profiles, division rankings, and an engaging Fantasy UFC game mode where users build fighter teams and compete for points based on real fight outcomes.
+Fighter Fantasy is a web-based UFC companion application featuring real-time event tracking, comprehensive fighter profiles, division rankings, and an engaging Fantasy UFC game mode where users build fighter teams and compete for points based on real fight outcomes.
 
 ## Project Scope
 
@@ -12,7 +12,7 @@ CageSide Companion is a web-based UFC companion application featuring real-time 
   - Fighter profiles and statistics
   - Division rankings
   - Fantasy UFC team building and scoring
-- **Data Strategy**: Mock data first, real scraped data integration later
+- **Data Strategy**: Seed a dev Firestore with a real initial dataset; integrate scraped data in Phase 6
 - **User Management**: Authentication and user profiles via Firebase
 
 ### Out of Scope (Future Phases)

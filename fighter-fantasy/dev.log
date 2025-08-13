@@ -1,0 +1,82 @@
+
+> fighter-fantasy@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Warning: Found multiple lockfiles. Selecting /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/package-lock.json.
+   Consider removing the lockfiles at:
+   * /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/package-lock.json
+
+   ▲ Next.js 15.4.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://10.17.0.184:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Compiled middleware in 72ms
+ ✓ Ready in 768ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1160ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ HEAD / 200 in 1358ms
+ ✓ Compiled /signup in 162ms
+ GET /signup 200 in 196ms
+ GET /signup 200 in 41ms
+ ✓ Compiled /login in 129ms
+ GET /login 200 in 147ms
+ GET /login?from=%2Ffantasy 200 in 33ms
+ GET /login?from=%2Ffantasy 200 in 34ms
+ GET / 200 in 32ms
+ ✓ Compiled in 14ms
+ ✓ Compiled in 27ms
+ ✓ Compiled in 37ms
+ ✓ Compiled in 20ms
+ ✓ Compiled in 22ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled in 11ms
+ ✓ Compiled in 21ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET / 200 in 169ms
+ GET /login 200 in 69ms
+ GET / 200 in 41ms
+ GET / 200 in 42ms
+ ✓ Compiled /events in 132ms
+ GET /events 200 in 147ms
+ GET /events 200 in 35ms
+ ✓ Compiled /fighters in 118ms
+ GET /fighters 200 in 138ms
+ GET / 200 in 52ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET /login 200 in 108ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET /signup 200 in 133ms
+ GET / 200 in 54ms
+ GET / 200 in 67ms
+ GET / 200 in 54ms

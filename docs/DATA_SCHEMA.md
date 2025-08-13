@@ -1,11 +1,11 @@
-# CageSide Companion - Data Schema & Mock Examples
+# Fighter Fantasy - Data Schema & Example Documents
 
 ## Overview
-This document provides complete data schemas and mock data examples for all entities in the CageSide Companion application.
+This document provides complete data schemas and example Firestore documents for all entities in the Fighter Fantasy application.
 
-## Mock Data Examples
+## Example Documents
 
-### 1. Fighters Mock Data
+### 1. Fighters Example Documents
 ```json
 {
   "fighters": [
@@ -227,7 +227,7 @@ This document provides complete data schemas and mock data examples for all enti
 }
 ```
 
-### 2. Events Mock Data
+### 2. Events Example Documents
 ```json
 {
   "events": [
@@ -305,7 +305,7 @@ This document provides complete data schemas and mock data examples for all enti
 }
 ```
 
-### 3. Fights Mock Data
+### 3. Fights Example Documents
 ```json
 {
   "fights": [
@@ -422,7 +422,7 @@ This document provides complete data schemas and mock data examples for all enti
 }
 ```
 
-### 4. Rankings Mock Data
+### 4. Rankings Example Documents
 ```json
 {
   "divisions": {
@@ -686,7 +686,7 @@ This document provides complete data schemas and mock data examples for all enti
 }
 ```
 
-### 5. Fantasy Mock Data
+### 5. Fantasy Example Documents
 ```json
 {
   "leagues": [
@@ -986,11 +986,11 @@ This document provides complete data schemas and mock data examples for all enti
       "picks": [
         { "fighter_id": "fighter_pantoja_alexandre", "salary": 2800, "slot": 1, "is_captain": true },
         { "fighter_id": "fighter_rakhmonov_shavkat", "salary": 2600, "slot": 2 },
-        { "fighter_id": "fighter_garry_ian", "salary": 1900, "slot": 3 },
+        { "fighter_id": "fighter_garry_ian", "salary": 1500, "slot": 3 },
         { "fighter_id": "fighter_evloev_movsar", "salary": 2100, "slot": 4 },
         { "fighter_id": "fighter_burns_gilbert", "salary": 1600, "slot": 5 }
       ],
-      "total_salary_used": 11000,
+      "total_salary_used": 10000,
       "is_locked": false,
       "total_points": 0
     },
@@ -1059,80 +1059,48 @@ Notes:
 - Teams lock 15 minutes before event start
 - Points calculation must be idempotent
 
-## Mock Data Generation Script
-```javascript
-// scripts/generateMockData.js
-const fs = require('fs');
-const path = require('path');
+## Dev Firestore Seed Script
+```typescript
+// scripts/seed.ts
+import * as admin from 'firebase-admin';
 
-function generateMockData() {
-  const mockData = {
-    fighters: generateFighters(50),
-    events: generateEvents(10),
-    fights: generateFights(100),
-    rankings: generateRankings(),
-    fantasy: generateFantasyData()
-  };
-  
-  // Write to data/mock directory
-  Object.keys(mockData).forEach(key => {
-    fs.writeFileSync(
-      path.join(__dirname, '../data/mock', `${key}.json`),
-      JSON.stringify(mockData[key], null, 2)
-    );
+const serviceAccountJson = process.env.FIREBASE_ADMIN_SDK_JSON;
+if (!serviceAccountJson) throw new Error('FIREBASE_ADMIN_SDK_JSON missing');
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(serviceAccountJson)),
   });
 }
 
-function generateFighters(count) {
-  // Implementation details...
+const db = admin.firestore();
+
+async function seed() {
+  // Load your real seed dataset from a secure source
+  // and write to Firestore collections (fighters, events, fights, rankings).
+  // Example: await db.collection('fighters').doc('fighter_id').set(fighterDoc);
 }
 
-function generateEvents(count) {
-  // Implementation details...
-}
-
-// Run the script
-generateMockData();
+seed().then(() => process.exit(0)).catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 ```
 
 ## Data Service Implementation
 ```typescript
-// services/mockDataService.ts
-import fightersData from '@/data/mock/fighters.json';
-import eventsData from '@/data/mock/events.json';
-import fightsData from '@/data/mock/fights.json';
-import rankingsData from '@/data/mock/rankings.json';
+// services/firestoreDataService.ts
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 
-export class MockDataService {
-  async getFighters(filters?: FighterFilters): Promise<Fighter[]> {
-    let fighters = fightersData.fighters;
-    
-    if (filters?.division) {
-      fighters = fighters.filter(f => f.division === filters.division);
-    }
-    
-    if (filters?.isActive !== undefined) {
-      fighters = fighters.filter(f => f.isActive === filters.isActive);
-    }
-    
-    return fighters;
-  }
-  
-  async getEvents(type?: 'upcoming' | 'past'): Promise<Event[]> {
+export class DataService {
+  async getEvents(type?: 'upcoming' | 'past') {
     const now = new Date().toISOString();
-    let events = eventsData.events;
-    
-    if (type === 'upcoming') {
-      events = events.filter(e => e.date_utc > now);
-    } else if (type === 'past') {
-      events = events.filter(e => e.date_utc <= now);
-    }
-    
-    return events.sort((a, b) => 
-      new Date(b.date_utc).getTime() - new Date(a.date_utc).getTime()
-    );
+    const snap = await getDocs(query(collection(db, 'events'), orderBy('date_utc', 'desc')));
+    const events = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+    if (type === 'upcoming') return events.filter(e => e.date_utc > now);
+    if (type === 'past') return events.filter(e => e.date_utc <= now);
+    return events;
   }
-  
-  // Additional methods...
 }
 ``` 

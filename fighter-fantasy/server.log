@@ -1,0 +1,65 @@
+
+> fighter-fantasy@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Warning: Found multiple lockfiles. Selecting /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/package-lock.json.
+   Consider removing the lockfiles at:
+   * /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/package-lock.json
+
+   ▲ Next.js 15.4.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://10.17.0.184:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Compiled middleware in 77ms
+ ✓ Ready in 734ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1317ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET / 200 in 1532ms
+ GET /fantasy/team-builder/ufc_310 200 in 1519ms
+ ✓ Compiled /login in 139ms
+ GET /login 200 in 159ms
+ GET / 200 in 27ms
+ ✓ Compiled /fantasy in 142ms
+ GET /fantasy 200 in 158ms
+ GET /fantasy/team-builder/ufc_310 200 in 36ms
+ ✓ Compiled /events in 121ms
+ GET /events 200 in 139ms
+ GET /fantasy 200 in 34ms
+ GET /fantasy/team-builder/ufc_310 200 in 33ms
+ GET /fantasy/team-builder/ufc_310 200 in 57ms
+ GET /login 200 in 22ms
+ GET / 200 in 23ms
+ ✓ Compiled in 19ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET /fantasy 200 in 230ms
+ GET / 200 in 60ms
+ GET /fantasy 200 in 39ms
+ GET /fantasy/team-builder/ufc_310 200 in 75ms
+Firebase config: {
+  apiKey: '***',
+  authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
+  projectId: 'fantasy-fighter-7fb46',
+  storageBucket: 'fantasy-fighter-7fb46.firebasestorage.app',
+  messagingSenderId: '328725109620',
+  appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
+}
+ GET /fantasy/team-builder/ufc_310 200 in 143ms
+ GET /login 200 in 20ms
+ GET / 200 in 17ms

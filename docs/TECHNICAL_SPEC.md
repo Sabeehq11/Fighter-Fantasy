@@ -1,14 +1,14 @@
-# CageSide Companion - Technical Specification
+# Fighter Fantasy - Technical Specification
 
 ## Architecture Overview
 
 ### Tech Stack
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
-- **State Management**: Zustand or Context API
+- **State/Data**: Zustand + @tanstack/react-query
 - **Backend**: Firebase (Auth, Firestore, Cloud Functions)
 - **Hosting**: Vercel (Frontend), Firebase (Backend services)
 - **Image Storage**: Firebase Storage or Cloudinary
-- **Data Pipeline**: Node.js scrapers → JSON → Firestore
+- **Data Pipeline**: Firecrawl API → Transform → Firestore
 
 ### System Architecture
 ```
@@ -20,8 +20,8 @@
         │                                            │
         ▼                                            │
 ┌─────────────────┐                          ┌──────────────┐
-│  Firebase       │                          │   Scrapers   │
-│  Storage        │                          │  (Node.js)   │
+│  Firebase       │                          │  Firecrawl   │
+│  Storage        │                          │     API      │
 └─────────────────┘                          └──────────────┘
 ```
 
@@ -547,7 +547,6 @@ firestore/
 │       └── {mens|womens}/
 ├── users/
 │   └── {user_id}/
-│       └── teams/            # Subcollection of user's fantasy teams
 ├── fantasy/
 │   ├── leagues/
 │   │   └── {league_id}/
@@ -711,8 +710,8 @@ Required Firestore Indexes:
 2. fighters: division ASC, ranking ASC
 3. fighters: isActive ASC, name ASC
 4. fights: event_id ASC, bout_order ASC
-5. fantasy_teams: event_id ASC, total_points DESC
-6. fantasy_teams: user_id ASC, created_at DESC
+5. fantasy/teams: event_id ASC, total_points DESC
+6. fantasy/teams: user_id ASC, created_at DESC
 ```
 
 ## Security Considerations
@@ -797,7 +796,7 @@ class NotFoundError extends AppError {
 
 ### Global Error Handler
 ```typescript
-// pages/_app.tsx or app/error.tsx
+// app/error.tsx
 export default function ErrorBoundary({
   error,
   reset,
@@ -826,13 +825,13 @@ export default function ErrorBoundary({
 // __tests__/scoring.test.ts
 describe('Fantasy Scoring Engine', () => {
   it('calculates base points correctly', () => {
-    const stats = mockFightStats;
+    const stats = fixtureFightStats;
     const points = calculatePoints(stats, scoringRules);
     expect(points.base).toBe(12); // 2 participation + 10 win
   });
   
   it('applies underdog multiplier', () => {
-    const stats = { ...mockFightStats, odds: 250 };
+    const stats = { ...fixtureFightStats, odds: 250 };
     const points = calculatePoints(stats, scoringRules);
     expect(points.total).toBe(basePoints * 1.2);
   });
@@ -889,11 +888,11 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=xxx
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxx
 NEXT_PUBLIC_FIREBASE_APP_ID=xxx
 
-FIREBASE_ADMIN_SDK_KEY=xxx
+FIREBASE_ADMIN_SDK_JSON=xxx
 STRIPE_SECRET_KEY=xxx
 STRIPE_WEBHOOK_SECRET=xxx
 
-SCRAPER_API_KEY=xxx
+FIRECRAWL_API_KEY=xxx
 SCRAPER_CRON_SECRET=xxx
 ```
 
@@ -934,28 +933,32 @@ SCRAPER_CRON_SECRET=xxx
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Public read for events, fighters, rankings
-    match /{collection}/{document=**} {
-      allow read: if collection in ['events', 'fighters', 'rankings', 'fights'];
-    }
-    
+    // Public read for events, fighters, rankings, fights
+    match /events/{doc=**} { allow read: if true; }
+    match /fighters/{doc=**} { allow read: if true; }
+    match /rankings/{doc=**} { allow read: if true; }
+    match /fights/{doc=**} { allow read: if true; }
+
     // User data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Fantasy teams
+
+    // Fantasy collections
+    match /fantasy/leagues/{leagueId} { allow read: if true; }
     match /fantasy/teams/{teamId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && 
+      allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
+      allow update: if request.auth != null &&
         request.auth.uid == resource.data.user_id &&
         resource.data.is_locked == false;
     }
-    
+    match /fantasy/salaries/{eventId}/{fighterId} { allow read: if true; }
+    match /fantasy/scores/{eventId}/{fighterId} { allow read: if true; }
+
     // Admin only
     match /admin/{document=**} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true;
     }
   }
@@ -980,7 +983,7 @@ interface FantasySeasonConfig {
 
 ## Additional Indexes
 ```
-7. fantasy_teams: mode ASC, event_date_utc DESC, user_id ASC
+7. fantasy/teams: mode ASC, event_date_utc DESC, user_id ASC
 ```
 
 Notes:

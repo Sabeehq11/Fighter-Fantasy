@@ -1,7 +1,7 @@
-# CageSide Companion - Implementation Phases
+# Fighter Fantasy - Implementation Phases
 
 ## Overview
-This document outlines the step-by-step implementation plan for CageSide Companion, broken into manageable phases with clear acceptance criteria and time estimates.
+This document outlines the step-by-step implementation plan for Fighter Fantasy, broken into manageable phases with clear acceptance criteria and time estimates.
 
 ## Phase 0: Project Setup & Infrastructure (Day 1)
 **Duration**: 4-6 hours
@@ -9,14 +9,16 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 ### Tasks
 1. **Initialize Next.js Project**
    ```bash
-   npx create-next-app@latest cageside-companion --typescript --tailwind --app
+   npx create-next-app@latest fighter-fantasy --typescript --tailwind --app
    ```
 
 2. **Install Core Dependencies**
    ```bash
-   npm install firebase firebase-admin zustand react-query axios date-fns
+   npm install firebase firebase-admin zustand @tanstack/react-query axios date-fns
    npm install -D @types/node
    ```
+   
+   Note: UI components (Card, Button, Badge, etc.) will be built custom or use shadcn/ui during Phase 1
 
 3. **Setup Firebase Project**
    - Create Firebase project in console
@@ -43,8 +45,8 @@ This document outlines the step-by-step implementation plan for CageSide Compani
    ├── services/
    ├── store/
    ├── types/
-   └── data/
-       └── mock/
+└── scripts/
+    └── seed.ts
    ```
 
 5. **Environment Configuration**
@@ -54,31 +56,28 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 
 ### Acceptance Criteria
 - [ ] App runs locally with `npm run dev`
-- [ ] Firebase Auth signup/login works
-- [ ] Protected routes redirect when not authenticated
 - [ ] App deploys successfully to Vercel
 - [ ] TypeScript configured with strict mode
 - [ ] Tailwind CSS working with dark mode support
 
 ---
 
-## Phase 1: Mock Data & Core Pages (Days 2-3)
+## Phase 1: Dev Firestore Seed & Core Pages (Days 2-3)
 **Duration**: 1.5-2 days
 
 ### Tasks
 
-#### 1.1 Create Mock Data (2 hours)
-```typescript
-// data/mock/fighters.json
-// data/mock/events.json
-// data/mock/rankings.json
-// data/mock/fights.json
+#### 1.1 Seed Dev Firestore (2 hours)
+```bash
+# scripts/seed.ts - seeds Firestore dev project using env creds
 ```
+- Seed initial fighters, events, fights, rankings into dev Firestore
+- No local JSON mocks; use Firestore as the source
 
 #### 1.2 Data Service Layer (3 hours)
 ```typescript
 // services/dataService.ts
-// services/mockDataLoader.ts
+// services/firestore.ts
 ```
 
 #### 1.3 Layout Components (2 hours)
@@ -112,7 +111,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Top 15 list with movement indicators
 
 ### Acceptance Criteria
-- [ ] All pages render with mock data
+- [ ] All pages render using Firestore dev dataset
 - [ ] Search functionality works on fighters page
 - [ ] Filter by division works
 - [ ] Event countdown shows correct time
@@ -259,7 +258,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 
 #### 4.5 One-and-Done Season Overlay (4 hours)
 - Create parallel per-event leagues with `mode = one_and_done` and `team_size = 1`
-- Denormalize `mode` and `event_date_utc` on `fantasy_teams`
+- Denormalize `mode` and `event_date_utc` on `fantasy/teams`
 - Enforce no fighter reuse in the current season window at create/update time
 - Season leaderboard: aggregate user totals across season window
 - Tie-breakers: highest single-event score, then earliest total reached
@@ -342,16 +341,18 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 
 ### Tasks
 
-#### 6.1 Scraper Development (8 hours)
-```javascript
-// scrapers/ufcStats.js
-// scrapers/espn.js
-// scrapers/ufcRankings.js
+#### 6.1 Firecrawl Integration (8 hours)
+```typescript
+// services/firecrawl.ts
+// transforms/ufcStats.ts
+// transforms/espn.ts
+// transforms/ufcRankings.ts
 ```
-- Fighter data scraper
-- Event data scraper
-- Rankings scraper
-- Results scraper
+- Configure Firecrawl API client
+- Fighter data extraction & transform
+- Event data extraction & transform
+- Rankings extraction & transform
+- Results extraction & transform
 
 #### 6.2 Data Pipeline (4 hours)
 - Data validation
@@ -374,13 +375,13 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Notification system
 
 #### 6.5 Data Migration (2 hours)
-- Migrate from mock to real data
+- Migrate seeded dev dataset to scraper-backed Firestore data
 - Verify data integrity
 - Update references
 - Test all features
 
 ### Acceptance Criteria
-- [ ] Scrapers fetch accurate data
+- [ ] Firecrawl extracts accurate data
 - [ ] Data validates against schema
 - [ ] No duplicate entries created
 - [ ] Admin can trigger manual sync

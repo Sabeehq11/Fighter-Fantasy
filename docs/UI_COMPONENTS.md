@@ -1,4 +1,4 @@
-# CageSide Companion - UI Components & Page Layouts
+# Fighter Fantasy - UI Components & Page Layouts
 
 ## Design System
 

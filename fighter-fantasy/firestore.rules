@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Prevent users from deleting their profiles
+    }
+    
+    // Public read access for events, fighters, rankings, fights
+    match /events/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    match /fighters/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    match /fights/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    match /rankings/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Fantasy Leagues - public read, admin write
+    match /leagues/{leagueId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.token.role == 'admin';
+      allow update: if request.auth != null && request.auth.token.role == 'admin';
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Fantasy Salaries - public read, admin write
+    match /salaries/{salaryId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.token.role == 'admin';
+      allow update: if request.auth != null && request.auth.token.role == 'admin';
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Fantasy Teams - users can manage their own teams
+    match /teams/{teamId} {
+      allow read: if true; // Public leaderboards
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.user_id;
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.user_id &&
+        request.auth.uid == request.resource.data.user_id;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.user_id;
+    }
+    
+    // Legacy fantasy collections (if any exist)
+    match /fantasy/teams/{teamId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /fantasy/leagues/{leagueId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 
