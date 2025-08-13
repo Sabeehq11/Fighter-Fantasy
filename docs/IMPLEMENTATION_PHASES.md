@@ -188,6 +188,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Team slots (5 fighters)
 - Salary display per fighter
 - Auto-save functionality
+- Captain selection toggle (1.5x) for one fighter (weekly mode)
 
 #### 3.4 Team Management Logic (6 hours)
 - Budget validation
@@ -196,6 +197,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Draft saving to Firestore
 - Team locking mechanism
 - Time-based lock enforcement
+- Enforce captain uniqueness (max 1)
 
 #### 3.5 My Teams Page (3 hours)
 - `/fantasy/my-teams`
@@ -214,6 +216,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - [ ] Teams lock 15 minutes before event
 - [ ] Locked teams cannot be edited
 - [ ] My Teams page shows all user teams
+- [ ] Captain can be assigned to exactly one fighter and reflected in draft state
 
 ---
 
@@ -231,6 +234,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Handle edge cases
 - Underdog multipliers
 - Penalty calculations
+- Apply per-fighter underdog multipliers first; then captain 1.5x; sum; then PPV 1.5x at team level
 
 #### 4.2 Admin Results Import (3 hours)
 - `/admin/results` - Admin only page
@@ -244,6 +248,7 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Update team totals
 - Store score events
 - Idempotent processing
+- Event-level PPV multiplier applied if league.settings.apply_ppv_multiplier and event.type === 'PPV'
 
 #### 4.4 Leaderboard (3 hours)
 - `/fantasy/leaderboard/[eventId]`
@@ -251,6 +256,13 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - Score breakdown modal
 - Pagination
 - Search functionality
+
+#### 4.5 One-and-Done Season Overlay (4 hours)
+- Create parallel per-event leagues with `mode = one_and_done` and `team_size = 1`
+- Denormalize `mode` and `event_date_utc` on `fantasy_teams`
+- Enforce no fighter reuse in the current season window at create/update time
+- Season leaderboard: aggregate user totals across season window
+- Tie-breakers: highest single-event score, then earliest total reached
 
 #### 4.5 Testing & Validation (2 hours)
 - Unit tests for scoring logic
@@ -267,6 +279,10 @@ This document outlines the step-by-step implementation plan for CageSide Compani
 - [ ] Leaderboard ranks correctly
 - [ ] Tie-breakers work (submission time)
 - [ ] Re-running scoring is idempotent
+- [ ] Scoring order matches spec (fighter → captain → team → PPV)
+- [ ] Weekly leaderboards reflect Captain and PPV multipliers
+- [ ] One-and-Done prevents reuse within season window
+- [ ] Season leaderboard computes correctly within start/end dates
 
 ---
 

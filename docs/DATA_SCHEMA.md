@@ -929,6 +929,103 @@ This document provides complete data schemas and mock data examples for all enti
 }
 ```
 
+## Fantasy Samples (Weekly vs One-and-Done)
+
+```json
+{
+  "leagues": [
+    {
+      "id": "league_global_weekly_ufc310",
+      "name": "Global Weekly - UFC 310",
+      "type": "global",
+      "mode": "salary_cap_weekly",
+      "event_id": "ufc_310",
+      "settings": {
+        "budget": 10000,
+        "team_size": 5,
+        "max_from_same_fight": 1,
+        "lock_time_minutes_before": 15,
+        "allow_captain": true,
+        "captain_multiplier": 1.5,
+        "apply_ppv_multiplier": true,
+        "ppv_multiplier": 1.5
+      },
+      "scoring_system": "standard",
+      "total_entries": 0,
+      "status": "open"
+    },
+    {
+      "id": "league_global_oneanddone_ufc310",
+      "name": "Global One-and-Done - UFC 310",
+      "type": "global",
+      "mode": "one_and_done",
+      "event_id": "ufc_310",
+      "settings": {
+        "budget": 0,
+        "team_size": 1,
+        "max_from_same_fight": 1,
+        "lock_time_minutes_before": 15,
+        "allow_captain": false,
+        "captain_multiplier": 1.5,
+        "apply_ppv_multiplier": true,
+        "ppv_multiplier": 1.5
+      },
+      "scoring_system": "standard",
+      "total_entries": 0,
+      "status": "open"
+    }
+  ],
+  "teams": [
+    {
+      "id": "team_user123_weekly_ufc310",
+      "user_id": "user_123",
+      "league_id": "league_global_weekly_ufc310",
+      "event_id": "ufc_310",
+      "mode": "salary_cap_weekly",
+      "event_date_utc": "2024-12-07T03:00:00Z",
+      "picks": [
+        { "fighter_id": "fighter_pantoja_alexandre", "salary": 2800, "slot": 1, "is_captain": true },
+        { "fighter_id": "fighter_rakhmonov_shavkat", "salary": 2600, "slot": 2 },
+        { "fighter_id": "fighter_garry_ian", "salary": 1900, "slot": 3 },
+        { "fighter_id": "fighter_evloev_movsar", "salary": 2100, "slot": 4 },
+        { "fighter_id": "fighter_burns_gilbert", "salary": 1600, "slot": 5 }
+      ],
+      "total_salary_used": 11000,
+      "is_locked": false,
+      "total_points": 0
+    },
+    {
+      "id": "team_user123_oneanddone_ufc310",
+      "user_id": "user_123",
+      "league_id": "league_global_oneanddone_ufc310",
+      "event_id": "ufc_310",
+      "mode": "one_and_done",
+      "event_date_utc": "2024-12-07T03:00:00Z",
+      "picks": [
+        { "fighter_id": "fighter_pantoja_alexandre", "salary": 0, "slot": 1 }
+      ],
+      "total_salary_used": 0,
+      "is_locked": false,
+      "total_points": 0
+    }
+  ],
+  "admin_config": {
+    "fantasy_season": {
+      "id": "current",
+      "name": "2025 Season A",
+      "start_date_utc": "2025-01-01T00:00:00Z",
+      "end_date_utc": "2025-06-30T23:59:59Z",
+      "mode": "one_and_done"
+    }
+  }
+}
+```
+
+Notes:
+- Weekly uses `allow_captain: true` and honors `ppv_multiplier` when event.type is PPV.
+- One-and-Done has `team_size: 1` and disallows captain; reuse enforcement is done at write-time by querying user teams in the season window for that fighter.
+- `event_date_utc` and `mode` are denormalized on teams for efficient season queries.
+
 ## Data Validation Rules
 
 ### Fighter Validation

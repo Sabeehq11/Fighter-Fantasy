@@ -841,3 +841,64 @@ export function MobileNav() {
   );
 }
 ``` 
+
+## Fantasy UI Additions
+
+### Captain Toggle (Weekly)
+```tsx
+// In FighterSelectionCard or TeamSlot
+<Button
+  variant={isCaptain ? 'champion' : 'outline'}
+  onClick={() => onToggleCaptain(fighter.id)}
+  disabled={isCaptain ? false : hasCaptainAlready}
+>
+  {isCaptain ? 'Captain (1.5x)' : 'Set Captain'}
+</Button>
+```
+
+Rules:
+- Exactly one Captain per team when `allow_captain` is true.
+- Visual badge on the Captain in roster and scoreboard.
+
+### One-and-Done Pick UI
+```tsx
+// Simple single-pick UI for season overlay
+<div className="space-y-4">
+  <DivisionFilter />
+  <FighterSearch />
+  <FighterGrid onPick={(fighter) => setPick(fighter)} />
+  <Button disabled={!pick} onClick={saveOneAndDone}>Submit Pick</Button>
+  <p className="text-xs text-muted">You cannot pick this fighter again this season.</p>
+</div>
+```
+
+### Season Leaderboard
+```tsx
+// /fantasy/season
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Rank</TableHead>
+      <TableHead>User</TableHead>
+      <TableHead>Events Played</TableHead>
+      <TableHead>Total Points</TableHead>
+      <TableHead>Best Event</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {rows.map(r => (
+      <TableRow key={r.userId}>
+        <TableCell>{r.rank}</TableCell>
+        <TableCell><UserCell userId={r.userId} /></TableCell>
+        <TableCell>{r.eventsPlayed}</TableCell>
+        <TableCell>{r.totalPoints}</TableCell>
+        <TableCell>{r.bestEvent.points} (UFC {r.bestEvent.name})</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+Notes:
+- Surface season name and dates from `admin/config/fantasy_season`.
+- Link each row to the user’s season page with per-event picks. 

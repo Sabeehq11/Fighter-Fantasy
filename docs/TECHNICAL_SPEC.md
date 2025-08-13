@@ -332,28 +332,35 @@ interface FantasyLeague {
   name: string;
   type: 'global' | 'private';
   event_id: string;               // Which event this is for
-  
+
+  // Format/Mode
+  mode: 'salary_cap_weekly' | 'one_and_done';
+
   // Rules
   settings: {
     budget: number;               // Total salary cap
-    team_size: number;            // Number of fighters
+    team_size: number;            // Number of fighters (weekly=5, one_and_done=1)
     max_from_same_fight: number;  // Usually 1
     lock_time_minutes_before: number; // Usually 15
+    allow_captain: boolean;       // Weekly format: true (global)
+    captain_multiplier: number;   // e.g., 1.5
+    apply_ppv_multiplier: boolean; // If true, use event.type === 'PPV' multiplier
+    ppv_multiplier: number;       // e.g., 1.5
   };
-  
+
   // Scoring System
   scoring_system: 'standard' | 'custom';
   custom_scoring?: ScoringRules;
-  
+
   // Participants
   total_entries: number;
   max_entries?: number;
   entry_fee?: number;
   prize_pool?: number;
-  
+
   // Status
   status: 'open' | 'locked' | 'scoring' | 'completed';
-  
+
   // Metadata
   created_at: Timestamp;
   created_by?: string;            // User ID for private leagues
@@ -364,21 +371,25 @@ interface FantasyTeam {
   user_id: string;
   league_id: string;
   event_id: string;
-  
+
+  // Denormalized for querying/season overlays
+  mode: 'salary_cap_weekly' | 'one_and_done';
+  event_date_utc: string;         // ISO date copied from Event for season range filters
+
   // Team Composition
   name?: string;                  // Optional team name
   picks: FantasyPick[];
   total_salary_used: number;
-  
+
   // Status
   is_locked: boolean;
   locked_at?: Timestamp;
-  
+
   // Scoring
   total_points: number;
   rank?: number;
   percentile?: number;
-  
+
   // Metadata
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -950,3 +961,28 @@ service cloud.firestore {
   }
 }
 ``` 
+
+## Admin Config: Fantasy Season
+```typescript
+// firestore: admin/config/fantasy_season
+interface FantasySeasonConfig {
+  id: 'current';
+  name: string;                   // e.g., "2025 Season A"
+  start_date_utc: string;         // ISO date (6-month window)
+  end_date_utc: string;           // ISO date
+  mode: 'one_and_done';
+}
+```
+
+## Scoring Application Order
+- Per fighter: base + method + round + performance + bonuses + penalties → underdog multiplier → captain multiplier (if applicable)
+- Team total: sum fighters → PPV event multiplier (if enabled)
+
+## Additional Indexes
+```
+7. fantasy_teams: mode ASC, event_date_utc DESC, user_id ASC
+```
+
+Notes:
+- `event_date_utc` and `mode` are denormalized to support season queries and enforcement without cross-collection joins.
+- `apply_ppv_multiplier` uses `event.type` to decide runtime multiplier. 

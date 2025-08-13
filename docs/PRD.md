@@ -449,3 +449,47 @@ CageSide Companion is a web-based UFC companion application featuring real-time 
 10. Women's Bantamweight (135 lbs)
 11. Women's Flyweight (125 lbs)
 12. Women's Strawweight (115 lbs) 
+
+## Fantasy Extensions (Finalized Rules)
+
+### Weekly Event (Salary Cap)
+- Remains the core weekly game: pick 5 fighters within budget.
+- Optional Captain slot enabled for Global League: 1 fighter gets a 1.5x multiplier.
+- Duplicate picks within the same matchup are still disallowed.
+
+### Event Multipliers (PPV “Majors”)
+- PPV events apply a 1.5x event multiplier to the team’s final total.
+- Applied after summing all fighters’ totals (including Captain effect and underdog multipliers).
+
+### One-and-Done Season Overlay
+- Parallel season-long mode running alongside weekly contests.
+- Pick exactly ONE fighter per event; you cannot reuse that fighter again during the season window.
+- Season window: 6 months; defined in admin config and shown in UI.
+- Scoring uses the same per-fight rules as weekly.
+- Leaderboard aggregates each user’s event totals across the season window.
+- Tie-breakers (season): highest single-event score, then earliest total reached (by submission timestamp).
+
+### Scoring Application Order
+Per fighter:
+1) Base + Method + Round + Performance + Bonuses + Penalties
+2) Apply per-fighter multipliers (Underdog)
+3) If Captain: apply 1.5x to that fighter’s total
+
+Team-level:
+4) Sum all fighters’ totals
+5) If event.type === 'PPV': apply 1.5x event multiplier
+
+Notes:
+- Title-fight bonus (+5) remains unchanged.
+- If odds are missing, underdog multiplier is skipped.
+- All multipliers are multiplicative; no stacking caps in v1.
+
+### Tie-breakers (Event)
+- Primary: earliest team submission time
+- Secondary: highest-scoring fighter in the team
+- Tertiary: most correct winner picks within the lineup
+
+### Compliance with Existing Scope
+- No schema breaking changes. Captain is already supported (`is_captain`).
+- PPV status uses `event.type` and is computed in the scoring engine.
+- One-and-Done uses a league with `team_size = 1`; enforcement uses past usage checks in the season window. 
