@@ -8,6 +8,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'bebas': ['var(--font-bebas)', 'sans-serif'],
+        'russo': ['var(--font-russo)', 'sans-serif'],
+        'barlow': ['var(--font-barlow)', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

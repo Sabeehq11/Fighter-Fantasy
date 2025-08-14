@@ -24,6 +24,11 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
+    
+    /* Custom font variables */
+    --font-bebas: 'Bebas Neue', sans-serif;
+    --font-russo: 'Russo One', sans-serif;
+    --font-barlow: 'Barlow', sans-serif;
   }
 
   .dark {
@@ -55,5 +60,52 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Typography - VENUM-inspired bold, angular style */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-bebas);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  
+  /* Alternative headings can use Russo One */
+  .font-russo {
+    font-family: var(--font-russo);
+  }
+  
+  /* Body text uses Barlow for readability */
+  .font-barlow {
+    font-family: var(--font-barlow);
+  }
+  
+  /* Custom text styles for VENUM-like appearance */
+  .text-fighter {
+    font-family: var(--font-bebas);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  
+  .text-impact {
+    font-family: var(--font-russo);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  
+  /* Gradient text effect */
+  .text-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Angular button style */
+  .btn-fighter {
+    font-family: var(--font-bebas);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
 }
