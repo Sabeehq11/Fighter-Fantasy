@@ -270,11 +270,75 @@ export default function LeaderboardPage() {
                           </div>
                           {pick.points !== undefined && (
                             <div className="text-lg font-bold text-green-400">
-                              {pick.points} pts
+                              {pick.points.toFixed(1)} pts
                             </div>
                           )}
                         </div>
                       </div>
+                      
+                      {/* Score Breakdown */}
+                      {pick.score_breakdown && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <div className="text-xs text-gray-400 mb-2">Score Breakdown:</div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                            {pick.score_breakdown.base_points !== 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Base Points:</span>
+                                <span className="text-white">{pick.score_breakdown.base_points}</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.method_bonus !== 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Method Bonus:</span>
+                                <span className="text-white">{pick.score_breakdown.method_bonus}</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.round_bonus !== 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Round Bonus:</span>
+                                <span className="text-white">{pick.score_breakdown.round_bonus}</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.performance_bonuses !== 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Performance:</span>
+                                <span className="text-white">{pick.score_breakdown.performance_bonuses}</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.penalties !== 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Penalties:</span>
+                                <span className="text-red-400">{pick.score_breakdown.penalties}</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.underdog_multiplier && pick.score_breakdown.underdog_multiplier > 1 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Underdog:</span>
+                                <span className="text-yellow-400">{pick.score_breakdown.underdog_multiplier}x</span>
+                              </div>
+                            )}
+                            {pick.score_breakdown.captain_multiplier && pick.score_breakdown.captain_multiplier > 1 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Captain:</span>
+                                <span className="text-yellow-400">{pick.score_breakdown.captain_multiplier}x</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Detailed breakdown if available */}
+                          {pick.score_breakdown.details && pick.score_breakdown.details.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-gray-700">
+                              <div className="text-xs space-y-1">
+                                {pick.score_breakdown.details.map((detail, idx) => (
+                                  <div key={idx} className="text-gray-500">
+                                    • {detail}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

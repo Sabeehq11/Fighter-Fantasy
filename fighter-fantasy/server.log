@@ -12,10 +12,10 @@
    - Environments: .env
 
  ✓ Starting...
- ✓ Compiled middleware in 77ms
- ✓ Ready in 734ms
+ ✓ Compiled middleware in 72ms
+ ✓ Ready in 758ms
  ○ Compiling / ...
- ✓ Compiled / in 1317ms
+ ✓ Compiled / in 1254ms
 Firebase config: {
   apiKey: '***',
   authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
@@ -24,22 +24,27 @@ Firebase config: {
   messagingSenderId: '328725109620',
   appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
 }
- GET / 200 in 1532ms
- GET /fantasy/team-builder/ufc_310 200 in 1519ms
- ✓ Compiled /login in 139ms
- GET /login 200 in 159ms
- GET / 200 in 27ms
- ✓ Compiled /fantasy in 142ms
- GET /fantasy 200 in 158ms
- GET /fantasy/team-builder/ufc_310 200 in 36ms
- ✓ Compiled /events in 121ms
- GET /events 200 in 139ms
- GET /fantasy 200 in 34ms
- GET /fantasy/team-builder/ufc_310 200 in 33ms
- GET /fantasy/team-builder/ufc_310 200 in 57ms
- GET /login 200 in 22ms
- GET / 200 in 23ms
- ✓ Compiled in 19ms
+ HEAD / 200 in 1498ms
+ ✓ Compiled /fighters in 147ms
+ GET /fighters 200 in 188ms
+ GET / 200 in 33ms
+ ✓ Compiled /fantasy in 221ms
+ GET /fantasy 200 in 237ms
+ GET / 200 in 34ms
+ GET / 200 in 37ms
+ ✓ Compiled in 66ms
+Error: Cannot apply unknown utility class `lg:px-16`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+    [2m[at onInvalidCandidate (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:1312)][0m
+    [2m[at ge (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:13:29503)][0m
+    [2m[at /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:373][0m
+    [2m[at I (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:3:1656)][0m
+    [2m[at je (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:172)][0m
+    [2m[at bi (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:35:780)][0m
+    [2m[at process.processTicksAndRejections (node:internal/process/task_queues:105:5)][0m
+    [2m[at async yi (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:35:1123)][0m
+    [2m[at async _r (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/@tailwindcss/node/dist/index.js:10:3384)][0m
+    [2m[at async p (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/@tailwindcss/postcss/dist/index.js:10:4019)][0m
+ ✓ Compiled in 21ms
 Firebase config: {
   apiKey: '***',
   authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
@@ -48,10 +53,23 @@ Firebase config: {
   messagingSenderId: '328725109620',
   appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
 }
- GET /fantasy 200 in 230ms
- GET / 200 in 60ms
- GET /fantasy 200 in 39ms
- GET /fantasy/team-builder/ufc_310 200 in 75ms
+ GET / 200 in 226ms
+ GET / 200 in 86ms
+ ✓ Compiled in 11ms
+ ✓ Compiled in 53ms
+Error: Cannot apply unknown utility class `border-border`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+    [2m[at onInvalidCandidate (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:1312)][0m
+    [2m[at ge (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:13:29803)][0m
+    [2m[at /Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:373][0m
+    [2m[at I (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:3:1656)][0m
+    [2m[at je (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:18:172)][0m
+    [2m[at bi (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:35:780)][0m
+    [2m[at process.processTicksAndRejections (node:internal/process/task_queues:105:5)][0m
+    [2m[at async yi (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/tailwindcss/dist/lib.js:35:1123)][0m
+    [2m[at async _r (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/@tailwindcss/node/dist/index.js:10:3384)][0m
+    [2m[at async p (/Users/sabeehqureshi/Desktop/git 2/Fighter-Fantasy/fighter-fantasy/node_modules/@tailwindcss/postcss/dist/index.js:10:4019)][0m
+ ✓ Compiled in 5ms
+ ✓ Compiled in 69ms
 Firebase config: {
   apiKey: '***',
   authDomain: 'fantasy-fighter-7fb46.firebaseapp.com',
@@ -60,6 +78,6 @@ Firebase config: {
   messagingSenderId: '328725109620',
   appId: '1:328725109620:web:1a2e69f0b01dd52d67ea21'
 }
- GET /fantasy/team-builder/ufc_310 200 in 143ms
- GET /login 200 in 20ms
- GET / 200 in 17ms
+ GET / 200 in 161ms
+ GET / 200 in 56ms
+ ✓ Compiled in 86ms

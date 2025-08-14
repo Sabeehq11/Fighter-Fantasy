@@ -12,7 +12,8 @@ import {
   serverTimestamp,
   Timestamp,
   DocumentData,
-  QueryDocumentSnapshot
+  QueryDocumentSnapshot,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { 
@@ -516,41 +517,91 @@ export function validateTeam(
 }
 
 // ============================================
-// LEADERBOARD FUNCTIONS
+// LEADERBOARD & SCORING
 // ============================================
 
 export async function getLeaderboard(leagueId: string): Promise<FantasyTeam[]> {
   try {
-    // Simplified query - just filter by league_id and status
     const q = query(
-      collection(db, 'teams'),
+      collection(db, 'fantasy_teams'),
       where('league_id', '==', leagueId),
-      where('status', 'in', ['locked', 'scored', 'submitted'])
+      where('status', '==', 'scored'),
+      orderBy('total_points', 'desc')
     );
     
     const snapshot = await getDocs(q);
-    const teams = snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc, index) => ({
       id: doc.id,
-      ...doc.data()
-    } as FantasyTeam));
-    
-    // Sort by points on client side
-    teams.sort((a, b) => {
-      const pointsA = a.total_points || 0;
-      const pointsB = b.total_points || 0;
-      return pointsB - pointsA; // Highest points first
-    });
-    
-    // Add rank after sorting
-    const rankedTeams = teams.map((team, index) => ({
-      ...team,
+      ...doc.data(),
       rank: index + 1
-    }));
-    
-    // Return top 100
-    return rankedTeams.slice(0, 100);
+    } as FantasyTeam));
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     return [];
+  }
+}
+
+// Get all teams for an event
+export async function getTeamsByEvent(eventId: string): Promise<FantasyTeam[]> {
+  try {
+    const q = query(
+      collection(db, 'fantasy_teams'),
+      where('event_id', '==', eventId),
+      where('status', 'in', ['submitted', 'locked'])
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as FantasyTeam));
+  } catch (error) {
+    console.error('Error fetching teams by event:', error);
+    return [];
+  }
+}
+
+// Update team scores after processing results
+export async function updateTeamScores(teamScores: any[]): Promise<boolean> {
+  try {
+    const batch = writeBatch(db);
+    
+    for (const teamScore of teamScores) {
+      const teamRef = doc(db, 'fantasy_teams', teamScore.team_id);
+      
+      // Update team with scores
+      batch.update(teamRef, {
+        total_points: teamScore.team_final_total,
+        status: 'scored',
+        scored_at: serverTimestamp(),
+        
+        // Update picks with individual scores
+        picks: teamScore.fighter_scores.map((fighterScore: any, index: number) => ({
+          ...teamScore.picks?.[index],
+          points: fighterScore.final_total,
+          score_breakdown: {
+            base_points: fighterScore.base_points,
+            method_bonus: fighterScore.finish_bonus,
+            round_bonus: fighterScore.round_bonus,
+            performance_bonuses: fighterScore.performance_points,
+            penalties: fighterScore.penalties,
+            underdog_multiplier: fighterScore.underdog_multiplier,
+            captain_multiplier: fighterScore.captain_multiplier,
+            subtotal: fighterScore.raw_total,
+            final_points: fighterScore.final_total,
+            details: Object.entries(fighterScore.breakdown)
+              .filter(([_, value]) => value !== 0)
+              .map(([key, value]) => `${key}: ${value}`)
+          }
+        }))
+      });
+    }
+    
+    await batch.commit();
+    console.log(`Successfully updated scores for ${teamScores.length} teams`);
+    return true;
+  } catch (error) {
+    console.error('Error updating team scores:', error);
+    return false;
   }
 } 

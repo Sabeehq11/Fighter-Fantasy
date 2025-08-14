@@ -75,6 +75,9 @@ export interface Fighter {
   profile_image_url: string;
   hero_image_url?: string;
   
+  // Betting
+  odds?: number;  // Current betting odds
+  
   // Metadata
   created_at?: any;
   updated_at?: any;
@@ -372,6 +375,17 @@ export interface ScoreBreakdown {
   details: string[];
 }
 
+// Scoring Breakdown Model (for detailed display)
+export interface ScoringBreakdown {
+  fighter_name: string;
+  total_points: number;
+  items: Array<{
+    label: string;
+    points: number;
+    isMultiplier?: boolean;
+  }>;
+}
+
 // Scoring Rules Configuration
 export interface ScoringRules {
   // Base Points
@@ -479,4 +493,36 @@ export interface PayoutTier {
   max_rank: number;
   prize: number;
   percentage?: number;
+} 
+
+// Fight Result Model
+export interface FightResult {
+  id?: string;
+  fight_id: string;
+  event_id: string;
+  
+  // Result Details
+  winner_id: string;
+  loser_id: string;
+  method: FightMethod | string;
+  round: number;
+  time_seconds?: number;
+  
+  // Fight Details
+  is_title_fight?: boolean;
+  is_main_event?: boolean;
+  weight_class?: WeightDivision;
+  
+  // Performance Bonuses
+  fight_of_the_night?: boolean;
+  performance_bonuses?: string[];  // Fighter IDs who received bonuses
+  
+  // Fighter Stats (detailed stats for each fighter)
+  fighter_stats?: {
+    [fighter_id: string]: FightStats;
+  };
+  
+  // Metadata
+  completed_at?: string;
+  updated_at?: any;
 } 

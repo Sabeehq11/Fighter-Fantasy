@@ -1,142 +1,126 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Calendar, Clock, MapPin, Users, Trophy, ChevronRight } from 'lucide-react';
 import { Event } from '@/types';
-// import { dataService } from '@/services/dataService';
-import { simpleDataService } from '@/services/dataService-simple';
+import { dataService } from '@/services/dataService';
 
 export default function EventsPage() {
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [pastEvents, setPastEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        // Fetch all events and filter client-side
-        const allEvents = await simpleDataService.getAllEvents();
-        const upcoming = allEvents.filter(e => e.status === 'upcoming');
-        const past = allEvents.filter(e => e.status === 'completed');
-        
-        console.log('Fetched events:', { upcoming, past, total: allEvents.length });
-        setUpcomingEvents(upcoming);
-        setPastEvents(past);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchEvents();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-text-secondary">Loading events...</div>
-      </div>
-    );
-  }
+  const events = [
+    { id: 1, title: 'UFC 298', date: 'Feb 17, 2024', location: 'Anaheim, CA', mainEvent: 'Volkanovski vs Topuria', status: 'upcoming' },
+    { id: 2, title: 'UFC Fight Night', date: 'Feb 24, 2024', location: 'Mexico City', mainEvent: 'Moreno vs Royval 2', status: 'upcoming' },
+    { id: 3, title: 'UFC 299', date: 'Mar 9, 2024', location: 'Miami, FL', mainEvent: "O'Malley vs Vera 2", status: 'upcoming' },
+    { id: 4, title: 'UFC 297', date: 'Jan 20, 2024', location: 'Toronto', mainEvent: 'Strickland vs Du Plessis', status: 'past' },
+    { id: 5, title: 'UFC 296', date: 'Dec 16, 2023', location: 'Las Vegas', mainEvent: 'Edwards vs Covington', status: 'past' },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">UFC Events</h1>
-
-      {/* Upcoming Events */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-6 text-accent-red">Upcoming Events</h2>
-        {upcomingEvents.length === 0 ? (
-          <p className="text-text-secondary">No upcoming events scheduled.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingEvents.map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="block bg-bg-secondary border border-border rounded-lg overflow-hidden hover:border-accent-red transition-colors"
-              >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                      event.type === 'PPV' 
-                        ? 'bg-accent-gold/20 text-accent-gold' 
-                        : 'bg-accent-blue/20 text-accent-blue'
-                    }`}>
-                      {event.type}
-                    </span>
-                    <span className="text-xs text-accent-green">UPCOMING</span>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{event.name}</h3>
-                  <p className="text-text-secondary text-sm mb-1">
-                    {formatDate(event.date_utc)}
-                  </p>
-                  <p className="text-text-secondary text-sm mb-3">
-                    {formatTime(event.date_utc)}
-                  </p>
-                  <p className="text-text-muted text-sm">
-                    📍 {event.venue.city}, {event.venue.country}
-                  </p>
-                </div>
-              </Link>
-            ))}
+    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: 'system-ui' }}>
+      {/* Navigation */}
+      <nav style={{ background: '#111', borderBottom: '1px solid #333', padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+            <span>Fighter</span>
+            <span style={{ color: '#0f0' }}>Fantasy</span>
           </div>
-        )}
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <a href="/" style={{ color: '#fff', textDecoration: 'none' }}>Home</a>
+            <a href="/events" style={{ color: '#0f0', textDecoration: 'none' }}>Events</a>
+            <a href="/fighters" style={{ color: '#fff', textDecoration: 'none' }}>Fighters</a>
+            <a href="/rankings" style={{ color: '#fff', textDecoration: 'none' }}>Rankings</a>
+            <a href="/fantasy" style={{ color: '#fff', textDecoration: 'none' }}>Fantasy</a>
+          </div>
+        </div>
+      </nav>
+
+      {/* Header */}
+      <section style={{ padding: '80px 20px', textAlign: 'center', borderBottom: '1px solid #333' }}>
+        <h1 style={{ fontSize: '64px', fontWeight: 'bold', marginBottom: '20px' }}>UFC EVENTS</h1>
+        <p style={{ fontSize: '20px', color: '#999', maxWidth: '600px', margin: '0 auto' }}>
+          Never miss a fight. Track upcoming events and relive historic moments.
+        </p>
       </section>
 
-      {/* Past Events */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-6 text-text-secondary">Past Events</h2>
-        {pastEvents.length === 0 ? (
-          <p className="text-text-secondary">No past events to display.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pastEvents.map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="block bg-bg-secondary/50 border border-border/50 rounded-lg overflow-hidden hover:border-accent-red/50 transition-colors opacity-75"
-              >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                      event.type === 'PPV' 
-                        ? 'bg-accent-gold/10 text-accent-gold/70' 
-                        : 'bg-accent-blue/10 text-accent-blue/70'
-                    }`}>
-                      {event.type}
-                    </span>
-                    <span className="text-xs text-text-muted">COMPLETED</span>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 text-text-secondary">{event.name}</h3>
-                  <p className="text-text-muted text-sm mb-1">
-                    {formatDate(event.date_utc)}
-                  </p>
-                  <p className="text-text-muted text-sm">
-                    📍 {event.venue.city}, {event.venue.country}
-                  </p>
+      {/* Events List */}
+      <section style={{ padding: '60px 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '32px', marginBottom: '40px', color: '#0f0' }}>Upcoming Events</h2>
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {events.filter(e => e.status === 'upcoming').map(event => (
+              <div key={event.id} style={{
+                background: '#111',
+                border: '1px solid #333',
+                borderRadius: '10px',
+                padding: '30px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 2fr 1fr',
+                gap: '20px',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ color: '#999', fontSize: '14px' }}>{event.date}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{event.title}</div>
                 </div>
-              </Link>
+                <div>
+                  <div style={{ fontSize: '20px', marginBottom: '5px' }}>{event.mainEvent}</div>
+                  <div style={{ color: '#999' }}>{event.location}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <button style={{
+                    background: '#0f0',
+                    color: '#000',
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '5px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}>
+                    View Card
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-        )}
+
+          <h2 style={{ fontSize: '32px', marginTop: '60px', marginBottom: '40px', color: '#999' }}>Past Events</h2>
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {events.filter(e => e.status === 'past').map(event => (
+              <div key={event.id} style={{
+                background: '#0a0a0a',
+                border: '1px solid #222',
+                borderRadius: '10px',
+                padding: '30px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 2fr 1fr',
+                gap: '20px',
+                alignItems: 'center',
+                opacity: 0.7
+              }}>
+                <div>
+                  <div style={{ color: '#666', fontSize: '14px' }}>{event.date}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{event.title}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '20px', marginBottom: '5px' }}>{event.mainEvent}</div>
+                  <div style={{ color: '#666' }}>{event.location}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <button style={{
+                    background: '#333',
+                    color: '#999',
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}>
+                    View Results
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </div>
   );

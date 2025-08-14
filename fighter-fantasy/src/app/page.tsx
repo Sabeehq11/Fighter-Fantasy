@@ -1,60 +1,132 @@
-import Link from 'next/link';
-
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-bg-primary to-bg-secondary">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-accent-red to-accent-gold bg-clip-text text-transparent">
-            Fighter Fantasy
-          </h1>
-          <p className="text-xl text-text-secondary mb-8">
-            The Ultimate UFC Companion & Fantasy Platform
-          </p>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: 'system-ui' }}>
+      {/* Navigation */}
+      <nav style={{ 
+        background: '#111', 
+        borderBottom: '1px solid #333',
+        padding: '20px'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+            <span>Fighter</span>
+            <span style={{ color: '#0f0' }}>Fantasy</span>
+          </div>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <a href="/" style={{ color: '#fff', textDecoration: 'none' }}>Home</a>
+            <a href="/events" style={{ color: '#fff', textDecoration: 'none' }}>Events</a>
+            <a href="/fighters" style={{ color: '#fff', textDecoration: 'none' }}>Fighters</a>
+            <a href="/fantasy" style={{ color: '#fff', textDecoration: 'none' }}>Fantasy</a>
+          </div>
+        </div>
+      </nav>
 
-          {/* Quick Actions */}
-          <div className="flex gap-4 justify-center mt-8">
-            <Link 
-              href="/events" 
-              className="px-6 py-3 bg-accent-red text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
-            >
-              View Events
-            </Link>
-            <Link 
-              href="/fighters" 
-              className="px-6 py-3 bg-bg-secondary border border-accent-gold text-accent-gold rounded-lg hover:bg-accent-gold hover:text-black transition-colors font-semibold"
-            >
-              Browse Fighters
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
-            <Link href="/events" className="bg-bg-secondary border border-border rounded-lg p-6 hover:border-accent-red transition-colors cursor-pointer hover:transform hover:scale-105 transform transition-transform">
-              <div className="text-accent-red text-4xl mb-4">🥊</div>
-              <h2 className="text-xl font-semibold mb-2">Events</h2>
-              <p className="text-text-secondary">Track upcoming UFC events with live countdowns</p>
-            </Link>
-            
-            <Link href="/rankings" className="bg-bg-secondary border border-border rounded-lg p-6 hover:border-accent-gold transition-colors cursor-pointer hover:transform hover:scale-105 transform transition-transform">
-              <div className="text-accent-gold text-4xl mb-4">🏆</div>
-              <h2 className="text-xl font-semibold mb-2">Rankings</h2>
-              <p className="text-text-secondary">View current champions and division rankings</p>
-            </Link>
-            
-            <Link href="/fantasy" className="bg-bg-secondary border border-border rounded-lg p-6 hover:border-accent-green transition-colors cursor-pointer hover:transform hover:scale-105 transform transition-transform">
-              <div className="text-accent-green text-4xl mb-4">🎮</div>
-              <h2 className="text-xl font-semibold mb-2">Fantasy</h2>
-              <p className="text-text-secondary">Build your dream team and compete for glory</p>
-            </Link>
-          </div>
-          
-                  <div className="mt-16 text-text-muted">
-          <p>Phase 0: Project Setup ✅</p>
-          <p>Phase 1: Core Pages & Data ✅</p>
-          <p className="text-sm mt-2">Ready for Phase 2: Authentication</p>
+      {/* Hero */}
+      <section style={{ padding: '100px 20px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '72px', fontWeight: 'bold', marginBottom: '20px' }}>
+          <div>FIGHTER</div>
+          <div style={{ color: '#0f0' }}>FANTASY</div>
+        </h1>
+        <p style={{ fontSize: '20px', color: '#999', marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
+          The ultimate MMA companion platform. Track fights, analyze stats, and compete in fantasy leagues.
+        </p>
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+          <button style={{
+            background: '#0f0',
+            color: '#000',
+            padding: '15px 30px',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            cursor: 'pointer'
+          }}>
+            Get Started
+          </button>
+          <button style={{
+            background: '#333',
+            color: '#fff',
+            padding: '15px 30px',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            cursor: 'pointer'
+          }}>
+            Learn More
+          </button>
         </div>
+      </section>
+
+      {/* Features */}
+      <section style={{ padding: '80px 20px', background: '#111' }}>
+        <h2 style={{ fontSize: '48px', textAlign: 'center', marginBottom: '60px' }}>Features</h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '30px',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          {[
+            { title: 'Championship Tracking', desc: 'Real-time UFC championship updates' },
+            { title: 'Fantasy Leagues', desc: 'Create and compete in custom leagues' },
+            { title: 'Live Statistics', desc: 'Advanced fighter analytics' },
+            { title: 'Fighter Profiles', desc: 'Comprehensive fighter data' }
+          ].map((feature, i) => (
+            <div key={i} style={{ 
+              background: '#222', 
+              padding: '30px',
+              borderRadius: '10px',
+              border: '1px solid #333'
+            }}>
+              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>{feature.title}</h3>
+              <p style={{ color: '#999' }}>{feature.desc}</p>
+            </div>
+          ))}
         </div>
-      </div>
-    </main>
+      </section>
+
+      {/* Events */}
+      <section style={{ padding: '80px 20px' }}>
+        <h2 style={{ fontSize: '48px', marginBottom: '60px' }}>Upcoming Events</h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '30px',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          {[
+            { title: 'UFC 298', date: 'Feb 17, 2024', main: 'Volkanovski vs Topuria' },
+            { title: 'UFC Fight Night', date: 'Feb 24, 2024', main: 'Moreno vs Royval 2' },
+            { title: 'UFC 299', date: 'Mar 9, 2024', main: 'O\'Malley vs Vera 2' }
+          ].map((event, i) => (
+            <div key={i} style={{ 
+              background: '#111', 
+              padding: '30px',
+              borderRadius: '10px',
+              border: '1px solid #333'
+            }}>
+              <div style={{ color: '#999', marginBottom: '10px' }}>{event.date}</div>
+              <h3 style={{ fontSize: '28px', marginBottom: '10px' }}>{event.title}</h3>
+              <p style={{ color: '#999', marginBottom: '20px' }}>{event.main}</p>
+              <a href="#" style={{ color: '#0f0', textDecoration: 'none' }}>View Details →</a>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ 
+        padding: '40px 20px', 
+        background: '#111',
+        borderTop: '1px solid #333',
+        textAlign: 'center',
+        color: '#999'
+      }}>
+        <p>© 2024 Fighter Fantasy. All rights reserved.</p>
+      </footer>
+    </div>
   );
 }

@@ -79,9 +79,34 @@ export default function EventDetailPage() {
   }
 
   // Separate fights by card position
-  const mainCard = fights.filter(f => event.main_card.includes(f.id));
-  const prelims = fights.filter(f => event.prelims.includes(f.id));
-  const earlyPrelims = fights.filter(f => event.early_prelims.includes(f.id));
+  // For events with proper fight IDs in arrays, use those
+  // Otherwise, separate by bout order (main card typically has higher bout orders)
+  let mainCard: FightWithFighters[] = [];
+  let prelims: FightWithFighters[] = [];
+  let earlyPrelims: FightWithFighters[] = [];
+  
+  if (event.main_card && event.main_card.length > 0) {
+    mainCard = fights.filter(f => event.main_card.includes(f.id));
+    prelims = fights.filter(f => event.prelims.includes(f.id));
+    earlyPrelims = fights.filter(f => event.early_prelims.includes(f.id));
+    
+    // If no matches found, use all fights and separate by type
+    if (mainCard.length === 0 && prelims.length === 0) {
+      // Use naming convention or bout order to separate
+      mainCard = fights.filter(f => 
+        f.id.includes('_prelim_') === false && 
+        f.id.includes('_early_') === false
+      );
+      prelims = fights.filter(f => 
+        f.id.includes('_prelim_') && 
+        f.id.includes('_early_') === false
+      );
+      earlyPrelims = fights.filter(f => f.id.includes('_early_'));
+    }
+  } else {
+    // No fight arrays defined, show all fights as main card
+    mainCard = fights;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
