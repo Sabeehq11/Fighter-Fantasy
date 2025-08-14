@@ -1,0 +1,14 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Jack Della Maddalena,,0,TRUE,18,2,0,0,"5'11""",73,170,Switch,28,Australia,Perth,Scrappy MMA,12,2,4
+Belal Muhammad,Remember the Name,1,FALSE,24,4,0,1,"5'11""",72,170,Orthodox,37,USA,Chicago,Roufusport,5,1,18
+Sean Brady,,2,FALSE,18,1,0,0,"5'9""",72,170,Orthodox,32,USA,Philadelphia,Renzo Gracie Philly,3,6,9
+Shavkat Rakhmonov,,3,FALSE,19,0,0,0,"6'2""",78?,170,Orthodox,30,Kazakhstan,Karaganda,American Top Team,7,0,12
+Leon Edwards,,4,FALSE,22,5,0,1,"6'0""",?,170,Southpaw,33,England,Birmingham,All Stars MMA,5,1,16
+Kamaru Usman,The Nigerian Nightmare,5,FALSE,21,4,0,0,"6'0""",76,170,Orthodox,36,Nigeria/USA,Chicago,Syndicate MMA,8,1,12
+Ian Machado Garry,The Future,6,FALSE,16,1,0,0,"5'10""",74,170,Orthodox,27,Ireland,Dublin,Chute Boxe Diego Lima,7,1,8
+Michael Morales,,7,FALSE,18,0,0,0,"5'10""",?,170,Orthodox,26,USA,Hollywood,Combat Sports Academy,6,2,10
+Joaquin Buckley,El Dragon,8,FALSE,21,7,0,0,"5'11""",75?,170,Southpaw,30,USA,St. Louis,Fortis MMA,16,1,4
+Colby Covington,Chaos,9,FALSE,17,5,0,0,"5'11""",72,170,Orthodox,34,USA,Wheeler,Team Tompkins,10,0,7
+Gilbert Burns,Durinho,10,FALSE,22,9,0,0,"5'10""",71,170,Orthodox,39,Brazil,Niterói,Kill Cliff FC,6,9,7
+Geoff Neal,G Money,11,FALSE,16,6,0,0,"6'0""",75,170,Orthodox,33,USA,Commerce City,Elevation Fight Team,11,1,4
+Carlos Prates,,12,FALSE,21,7,0,0,"6'0""",?,170,Orthodox,29,Brazil,Recife,Team Nogueira,12,2,7

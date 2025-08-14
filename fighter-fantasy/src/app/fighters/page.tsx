@@ -1,30 +1,37 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getFighters } from '@/services/dataService';
+import { Fighter } from '@/types';
 
 export default function FightersPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWeightClass, setSelectedWeightClass] = useState('all');
   const [sortBy, setSortBy] = useState('rank');
   const [showChampions, setShowChampions] = useState(false);
+  const [fighters, setFighters] = useState<Fighter[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fighters = [
-    { id: 1, name: 'Islam Makhachev', weightClass: 'Lightweight', rank: 'C', record: '25-1', salary: 11500, height: "5'10\"", reach: '70.5"', stance: 'Orthodox', streak: 'W13' },
-    { id: 2, name: 'Jon Jones', weightClass: 'Heavyweight', rank: 'C', record: '27-1', salary: 12000, height: "6'4\"", reach: '84.5"', stance: 'Orthodox', streak: 'W1' },
-    { id: 3, name: 'Alex Pereira', weightClass: 'Light Heavyweight', rank: 'C', record: '11-2', salary: 11000, height: "6'4\"", reach: '79"', stance: 'Orthodox', streak: 'W3' },
-    { id: 4, name: 'Sean Strickland', weightClass: 'Middleweight', rank: 'C', record: '29-6', salary: 10500, height: "6'1\"", reach: '76"', stance: 'Orthodox', streak: 'L1' },
-    { id: 5, name: 'Khamzat Chimaev', weightClass: 'Welterweight', rank: 3, record: '13-0', salary: 9500, height: "6'2\"", reach: '75"', stance: 'Orthodox', streak: 'W13' },
-    { id: 6, name: 'Charles Oliveira', weightClass: 'Lightweight', rank: 1, record: '34-10', salary: 9000, height: "5'10\"", reach: '74"', stance: 'Orthodox', streak: 'W1' },
-    { id: 7, name: 'Max Holloway', weightClass: 'Featherweight', rank: 2, record: '26-7', salary: 8500, height: "5'11\"", reach: '69"', stance: 'Orthodox', streak: 'W3' },
-    { id: 8, name: 'Amanda Nunes', weightClass: "Women's Bantamweight", rank: 'C', record: '23-5', salary: 10000, height: "5'8\"", reach: '69"', stance: 'Orthodox', streak: 'RETIRED' },
-    { id: 9, name: 'Dustin Poirier', weightClass: 'Lightweight', rank: 3, record: '30-8', salary: 8000, height: "5'9\"", reach: '72"', stance: 'Southpaw', streak: 'L1' },
-    { id: 10, name: 'Israel Adesanya', weightClass: 'Middleweight', rank: 1, record: '24-3', salary: 9500, height: "6'4\"", reach: '80"', stance: 'Orthodox', streak: 'L1' },
-  ];
+  useEffect(() => {
+    const loadFighters = async () => {
+      try {
+        const data = await getFighters();
+        setFighters(data);
+      } catch (error) {
+        console.error('Error loading fighters:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFighters();
+  }, []);
 
   const weightClasses = [
     'all',
@@ -35,8 +42,10 @@ export default function FightersPage() {
     'Lightweight',
     'Featherweight',
     'Bantamweight',
-    "Women's Bantamweight",
-    "Women's Strawweight"
+    'Flyweight',
+    "Women's Strawweight",
+    "Women's Flyweight",
+    "Women's Bantamweight"
   ];
 
   const filteredFighters = useMemo(() => {
@@ -45,43 +54,82 @@ export default function FightersPage() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(f => 
-        f.name.toLowerCase().includes(searchTerm.toLowerCase())
+        f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (f.nickname && f.nickname.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     // Filter by weight class
     if (selectedWeightClass !== 'all') {
-      filtered = filtered.filter(f => f.weightClass === selectedWeightClass);
+      filtered = filtered.filter(f => f.division === selectedWeightClass);
     }
 
     // Filter champions
     if (showChampions) {
-      filtered = filtered.filter(f => f.rank === 'C');
+      filtered = filtered.filter(f => f.isChampion);
     }
 
     // Sort
     filtered.sort((a, b) => {
       if (sortBy === 'rank') {
-        if (a.rank === 'C' && b.rank !== 'C') return -1;
-        if (a.rank !== 'C' && b.rank === 'C') return 1;
-        if (typeof a.rank === 'number' && typeof b.rank === 'number') {
-          return a.rank - b.rank;
+        // Champions first
+        if (a.isChampion && !b.isChampion) return -1;
+        if (!a.isChampion && b.isChampion) return 1;
+        // Then by ranking
+        if (a.ranking !== null && a.ranking !== undefined && 
+            b.ranking !== null && b.ranking !== undefined) {
+          return a.ranking - b.ranking;
         }
+        if (a.ranking === null || a.ranking === undefined) return 1;
+        if (b.ranking === null || b.ranking === undefined) return -1;
         return 0;
       }
       if (sortBy === 'name') {
         return a.name.localeCompare(b.name);
       }
       if (sortBy === 'wins') {
-        const aWins = parseInt(a.record.split('-')[0]);
-        const bWins = parseInt(b.record.split('-')[0]);
-        return bWins - aWins;
+        return (b.record?.wins || 0) - (a.record?.wins || 0);
       }
       return 0;
     });
 
     return filtered;
-  }, [searchTerm, selectedWeightClass, sortBy, showChampions]);
+  }, [fighters, searchTerm, selectedWeightClass, sortBy, showChampions]);
+
+  // Helper function to format height
+  const formatHeight = (inches: number | null | undefined) => {
+    if (!inches) return 'N/A';
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    return `${feet}'${remainingInches}"`;
+  };
+
+  // Helper function to format reach
+  const formatReach = (reach: number | null | undefined) => {
+    if (!reach) return 'N/A';
+    return `${reach}"`;
+  };
+
+  // Helper function to determine streak (simplified)
+  const getStreak = (fighter: Fighter) => {
+    // This would need real fight history data
+    // For now, just show record
+    return `${fighter.record?.wins || 0}-${fighter.record?.losses || 0}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-5xl font-bold mb-8 text-white">Fighters</h1>
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">Loading fighters...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -99,7 +147,7 @@ export default function FightersPage() {
               <Input
                 id="search"
                 type="text"
-                placeholder="Search by name..."
+                placeholder="Search by name or nickname..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
@@ -165,51 +213,72 @@ export default function FightersPage() {
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    {fighter.rank === 'C' ? (
+                    {fighter.isChampion ? (
                       <span className="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold">
                         CHAMPION
                       </span>
+                    ) : fighter.ranking ? (
+                      <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">
+                        #{fighter.ranking}
+                      </span>
                     ) : (
                       <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">
-                        #{fighter.rank}
+                        Unranked
                       </span>
                     )}
                   </div>
-                  <span className="text-green-500 font-bold">${fighter.salary}</span>
+                  <span className="text-gray-400 text-sm">{fighter.age ? `${fighter.age} yrs` : ''}</span>
                 </div>
-                <CardTitle className="text-xl text-white">{fighter.name}</CardTitle>
-                <CardDescription className="text-gray-400">{fighter.weightClass}</CardDescription>
+                <CardTitle className="text-xl text-white">
+                  {fighter.name}
+                  {fighter.nickname && (
+                    <span className="text-sm text-gray-400 block mt-1">"{fighter.nickname}"</span>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-gray-400">{fighter.division}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500">Record:</span>
-                    <span className="text-white ml-2">{fighter.record}</span>
+                    <span className="text-white ml-2">
+                      {fighter.record ? `${fighter.record.wins}-${fighter.record.losses}` : 'N/A'}
+                      {fighter.record?.draws ? `-${fighter.record.draws}` : ''}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Streak:</span>
-                    <span className={`ml-2 font-semibold ${
-                      fighter.streak.startsWith('W') ? 'text-green-500' : 
-                      fighter.streak.startsWith('L') ? 'text-red-500' : 'text-gray-400'
-                    }`}>
-                      {fighter.streak}
+                    <span className="text-gray-500">Finishes:</span>
+                    <span className="text-white ml-2">
+                      {fighter.finishes ? `${fighter.finishes.ko_tko + fighter.finishes.submissions}` : '0'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500">Height:</span>
-                    <span className="text-white ml-2">{fighter.height}</span>
+                    <span className="text-white ml-2">{formatHeight(fighter.height_inches)}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Reach:</span>
-                    <span className="text-white ml-2">{fighter.reach}</span>
+                    <span className="text-white ml-2">{formatReach(fighter.reach_inches)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Stance:</span>
+                    <span className="text-white ml-2">{fighter.stance || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Gym:</span>
+                    <span className="text-white ml-2 text-xs">{fighter.gym || 'N/A'}</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-500">Stance:</span>
-                    <span className="text-white ml-2">{fighter.stance}</span>
+                    <span className="text-gray-500">Nationality:</span>
+                    <span className="text-white ml-2">{fighter.nationality || 'N/A'}</span>
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button className="flex-1 bg-green-500 hover:bg-green-600 text-black font-semibold" size="sm">
+                  <Button 
+                    onClick={() => router.push(`/fighters/${fighter.id}`)}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-black font-semibold" 
+                    size="sm"
+                  >
                     View Profile
                   </Button>
                   <Button variant="outline" className="flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-black" size="sm">

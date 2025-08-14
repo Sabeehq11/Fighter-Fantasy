@@ -1,0 +1,14 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Alexandre Pantoja,The Cannibal,0,TRUE,30,5,0,0,"5'5""",68,125,Orthodox,35,Brazil,Arraial do Cabo,American Top Team,8,12,10
+Joshua Van,The Fearless,1,FALSE,8,1,0,0,"5'5""",65,125,Orthodox,23,Myanmar/USA,Houston,4oz Fight Club,7,2,6
+Brandon Moreno,The Assassin Baby,2,FALSE,23,8,2,0,"5'7""",?,125,Orthodox,29,Mexico,Tecpan,Entram Gym,5,4,14
+Brandon Royval,Raw Dawg,3,FALSE,17,8,0,0,"5'10""",?,125,Orthodox,33,USA,Columbia,Team Elevation,3,4,10
+Amir Albazi,,4,FALSE,17,3,0,0,"5'5""",?,125,Orthodox,28,Iraq/UK,Manchester,Paragon MMA,7,4,6
+Kai Kara-France,,5,FALSE,25,12,1,1,"5'5""",?,125,Switch,31,New Zealand,Auckland,Duckling MMA,13,2,10
+Tatsuro Taira,,6,FALSE,7,1,0,0,"5'6""",?,125,Orthodox,25,Japan,Tokyo,Paraestra Tokyo,2,5,0
+Manel Kape,Starboy,7,FALSE,21,7,0,0,"5'6""",?,125,Orthodox,29,Portugal-Angola,Phuket,(AKA) Thailand,13,5,3
+Alex Perez,,8,FALSE,25,9,0,0,"5'7""",?,125,Orthodox,31,USA,Iowa,Syndicate MMA,6,7,12
+Asu Almabayev,,9,FALSE,22,3,0,0,"5'9""",?,125,Orthodox,30,Kazakhstan,Almaty,,3,9,10
+Steve Erceg,AstroBoy,10,FALSE,13,4,0,0,"5'5""",?,125,Orthodox,29,Australia,Perth,Wilkes Martial Arts,2,6,5
+Tim Elliott,,11,FALSE,22,14,1,0,"5'6""",?,125,Orthodox,35,USA,Colorado Springs,Team Elevation,4,8,10
+Tagir Ulanbekov,,12,FALSE,17,1,0,0,"5'8""",?,125,Orthodox,28,Russia,Kazakhstan,Hardcore MMA,1,7,9

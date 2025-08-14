@@ -1,0 +1,14 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Dricus Du Plessis,Stillknocks,0,TRUE,23,2,0,0,"6'1""",78,185,Switch,31,South Africa,Johannesburg,CIT Performance Institute,9,11,3
+Nassourdine Imavov,The Sniper,1,FALSE,16,4,0,1,"6'3""",75,185,Orthodox,30,France (born Russia),Salon-de-Provence,Venum Training Camp,7,4,5
+Sean Strickland,,2,FALSE,29,6,0,0,"6'1""",76,185,Orthodox,33,USA,Anaheim,Millennia MMA,17,1,11
+Khamzat Chimaev,,3,FALSE,14,0,0,0,"6'2""",75,185,Orthodox,30,Sweden/Chechnya,Gothenburg,Allstars Training Center,10,4,0
+Israel Adesanya,The Last Stylebender,4,FALSE,24,3,0,0,"6'4""",80,185,Southpaw,35,Nigeria/New Zealand,Auckland,Bestroy Jiu-Jitsu,15,4,5
+Reinier de Ridder,,5,FALSE,15,1,0,0,"6'2""",78,185,Orthodox,32,Netherlands,Den Bosch,Sherdog MMA/ONE,8,4,3
+Caio Borralho,The Natural,6,FALSE,17,1,0,0,"6'1""",74,185,Orthodox,29,Brazil,São Paulo,American Top Team,5,8,4
+Anthony Hernandez,Fluffy,7,FALSE,14,5,0,0,"6'0""",74,185,Orthodox,30,USA,Las Vegas,Onyx MMA,8,6,0
+Robert Whittaker,The Reaper,8,FALSE,22,5,0,1,"6'0""",73.5,185,Orthodox,34,Australia,Sydney,PMA Super Martial Arts,10,5,11
+Jared Cannonier,Cannon,9,FALSE,16,8,0,0,"6'2""",77,185,Orthodox,38,USA,Des Moines,Des Moines Jiu Jitsu,12,2,7
+Brendan Allen,,10,FALSE,19,5,0,0,"6'0""",74,185,Orthodox,29,USA,East Providence,Victory MMA & Fitness,9,7,3
+Roman Dolidze,,11,FALSE,12,4,0,0,"6'2""",78,185,Orthodox,32,Georgia,Saint Petersburg,Golden Team,8,2,5
+Paulo Costa,Borat,12,FALSE,13,4,0,0,"6'1""",75,185,Orthodox,33,Brazil,Belo Horizonte,Spineli MMA,12,2,4

@@ -1,0 +1,12 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Zhang Weili,Magnum,0,TRUE,26,3,0,0,"5'4""",63,115,Switch,36,China,Handan,Black Tiger Fight Club / Fight Ready MMA,11,8,7
+Virna Jandiroba,Carcará,1,FALSE,22,3,0,0,"5'3""",64,115,Orthodox,37,Brazil,Santarém,Academia Fight House,1,14,7
+Tatiana Suarez,,2,FALSE,11,1,0,0,"5'5""",66,115,Southpaw,34,USA,Covina,Millennia MMA,2,6,3
+Yan Xiaonan,Nine,3,FALSE,19,5,0,1,"5'5""",63,115,Orthodox,36,China,Beijing,Team Alpha Male,8,1,10
+Amanda Lemos,Amandinha,4,FALSE,15,4,1,0,"5'4""",65,115,Southpaw,38,Brazil,Belém,Marajó Brothers Team,8,3,4
+Jéssica Andrade,Bate Estaca,5,FALSE,26,14,0,0,"5'1""",62,115,Orthodox,33,Brazil,Parana,Vale Tudo,10,8,8
+Mackenzie Dern,,6,FALSE,15,5,0,0,"5'4""",63,115,Orthodox,32,USA,Scottsdale,Black House MMA,0,8,7
+Iasmin Lucindo,,7,FALSE,18,6,0,0,"5'3""",66,115,Orthodox,23,Brazil,Feira de Santana,Academia Fight House,8,3,7
+Tabatha Ricci,,8,FALSE,9,1,0,0,"5'3""",65,115,Orthodox,29,Brazil,São Paulo,Team Tiger Muay Thai,2,4,3
+Gillian Robertson,,9,FALSE,12,6,0,0,"5'5""",64,115,Orthodox,30,Canada,Ontario,Tristar Gym,3,8,1
+Amanda Ribas,,10,FALSE,13,5,0,0,"5'5""",65,115,Orthodox,30,Brazil,São Paulo,American Top Team,4,4,5

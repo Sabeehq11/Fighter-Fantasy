@@ -1,0 +1,12 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Valentina Shevchenko,Bullet,0,TRUE,25,4,1,0,"5'5""",66,125,Southpaw,37,Kyrgyzstan/Peru,Bishkek,Tiger Muay Thai,8,7,10
+Natalia Silva,,1,FALSE,19,5,1,0,"5'5""",65,125,Orthodox,28,Brazil,Rio de Janeiro,American Top Team,2,5,4
+Manon Fiorot,,2,FALSE,12,2,0,0,"5'6""",66,125,Orthodox,35,France,Creil,Team Elevation,6,3,4
+Alexa Grasso,,3,FALSE,17,4,0,0,"5'4""",65,125,Orthodox,31,Mexico,Monterrey,Jackson Wink MMA,3,4,10
+Erin Blanchfield,,4,FALSE,12,1,0,0,"5'6""",66,125,Orthodox,27,USA,New Jersey,Renzo Gracie Academy,2,6,4
+Jasmine Jasudavicius,,5,FALSE,9,2,0,0,"5'6""",65,125,Orthodox,27,Canada,Toronto,Tristar Gym,1,4,4
+Maycee Barber,,6,FALSE,13,3,0,0,"5'6""",67,125,Orthodox,26,USA,Denver,Elevation Fight Team,6,2,5
+Rose Namajunas,Thug,7,FALSE,12,5,0,0,"5'5""",65,125,Southpaw,31,USA,Louisville,Team Elevation,2,4,6
+Tracy Cortez,,8,FALSE,11,2,0,0,"5'4""",64,125,Orthodox,28,USA,Los Angeles,Fortis MMA,2,3,6
+Jéssica Andrade,Thug Rose,9,FALSE,23,9,0,0,"5'1""",61,125,Orthodox,34,Brazil,Brasília,American Top Team,13,7,3
+Miranda Maverick,,10,FALSE,12,4,0,0,"5'5""",64,125,Orthodox,28,USA,Texas,Fortis MMA,3,5,4

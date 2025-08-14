@@ -1,0 +1,14 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Alexander Volkanovski,The Great,0,TRUE,27,4,0,0,"5'6""",71,145,Orthodox,36,Australia,Wollongong,City Kickboxing/Freestyle Fighting,13,3,11
+Movsar Evloev,,1,FALSE,19,0,0,0,"5'7""",72.5,145,Orthodox,31,Russia,Sunzha,Nart Fight Club/ATAK,3,4,12
+Diego Lopes,,2,FALSE,26,7,0,0,"5'11""",?,145,Orthodox,30,Brazil,Manaus,Lobo Gym MMA,10,12,4
+Yair Rodriguez,,3,FALSE,21,5,1,0,"5'8""",?,145,Orthodox,31,Mexico,Parral,Team Alpha Male/Entram Gym,8,5,8
+Brian Ortega,,4,FALSE,16,4,1,0,"5'8""",?,145,Switch,31,USA,California,Tecpan,3,8,5
+Arnold Allen,Almighty,5,FALSE,20,3,0,0,"5'9""",70,145,Orthodox,31,England,Ipswich,Tristar/BKK Fighters,7,4,9
+Lerone Murphy,,6,FALSE,16,0,1,0,"5'7""",?,145,Switch,30,UK,Manchester,All Powers gym,7,0,9
+Aljamain Sterling,Funk Master,7,FALSE,24,5,0,0,"5'10""",?,145,Orthodox,33,USA,New York,Paragon MMA,3,8,13
+Josh Emmett,,8,FALSE,19,5,0,0,"5'7""",?,145,Orthodox,36,USA,California,Urijah Faber's Ultimate Fitness,7,2,10
+Youssef Zalal,The Moroccan Devil,9,FALSE,17,5,1,0,"5'9""",72,145,Orthodox,28,Morocco/Casablanca,Factory X,,4,9,4
+Jean Silva,,10,FALSE,16,2,0,0,"5'8""",?,145,Orthodox,29,Brazil,São Paulo,Fighting Nerds Gym,12,3,1
+Patricio Pitbull,,11,FALSE,37,8,0,0,"5'8""",?,145,Orthodox,36,Brazil,Rio Grande do Norte,,12,12,13
+Steve Garcia,,12,FALSE,18,5,0,0,"5'6""",?,145,Orthodox,32,USA,Albuquerque,Jackson Wink MMA Academy,14,0,4

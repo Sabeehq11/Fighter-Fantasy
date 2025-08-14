@@ -1,0 +1,12 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Kayla Harrison,,0,TRUE,19,1,0,0,"5'8""",66,135,Southpaw,35,USA,Middletown,American Top Team,6,8,5
+Julianna Peña,The Venezuelan Vixen,1,FALSE,12,6,0,0,"5'6""",69,135,Orthodox,35,USA,Spokane,SikJitsu,3,5,4
+Raquel Pennington,Rocky,2,FALSE,16,10,0,0,"5'7""",67.5,135,Orthodox,36,USA,Colorado Springs,Altitude MMA,1,4,11
+Ketlen Vieira,,3,FALSE,13,4,0,0,"5'10""",66,135,Orthodox,33,Brazil,Rio de Janeiro,American Top Team,2,2,9
+Norma Dumont,,4,FALSE,9,3,0,0,"6'0""",68,135,Orthodox,30,Brazil,Rio de Janeiro,Team Nogueira,5,1,3
+Macy Chiasson,,5,FALSE,8,4,0,0,"5'11""",70,135,Orthodox,30,USA,Norfolk,Team Elevation,6,1,1
+Irene Aldana,,6,FALSE,15,7,0,0,"5'8""",69,135,Orthodox,32,Mexico,Guadalajara,American Top Team,9,3,3
+Ailin Perez,,7,FALSE,11,2,0,0,"5'9""",66,135,Orthodox,28,USA,Chicago,Alpha MMA,3,4,4
+Mayra Bueno Silva,,8,FALSE,9,3,0,0,"5'7""",66,135,Orthodox,28,Brazil,Rio de Janeiro,American Top Team,2,5,2
+Karol Rosa,,9,FALSE,15,4,0,0,"5'7""",65,135,Orthodox,30,Brazil,Rio de Janeiro,Team Nogueira,3,5,7
+Yana Santos,,10,FALSE,13,5,0,0,"5'8""",66,135,Orthodox,36,Brazil,Rio de Janeiro,American Top Team,5,6,2

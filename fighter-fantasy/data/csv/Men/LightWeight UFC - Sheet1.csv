@@ -1,0 +1,13 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Ilia Topuria,El Matador,1,TRUE,17,0,0,0,"5'7""",69,155,Orthodox,28,Spain/Georgia,Alicante,Climent Club,8,4,5
+Islam Makhachev,,2,FALSE,27,1,0,0,"5'10""",70.5,155,Southpaw,33,Russia,Makhachkala,Eagles MMA/AKA,5,13,9
+Arman Tsarukyan,,3,FALSE,22,3,0,0,"5'7""",72.5,155,Orthodox,28,Armenia,Yerevan,American Top Team,9,0,13
+Max Holloway,Blessed,4,FALSE,27,8,0,0,"5'11""",69,155,Orthodox,33,USA,Waianae,Gracie Technics,12,2,13
+Charles Oliveira,Do Bronx,5,FALSE,35,11,0,1,"5'10""",74,155,Orthodox,34,Brazil,São Paulo,Chute Boxe,10,22,3
+Justin Gaethje,The Highlight,6,FALSE,26,6,0,0,"5'10""",70,155,Orthodox,34,USA,Safford,Gaethje MMA,19,0,7
+Dan Hooker,Boogeyman,7,FALSE,29,12,0,0,"6'0""",74,155,Orthodox,33,New Zealand,Auckland,City Kickboxing,14,3,12
+Mateusz Gamrot,,8,FALSE,25,3,1,0,"5'10""",69,155,Orthodox,33,Poland,Wroclaw,Gracie Barra Poland,8,7,10
+Beneil Dariush,,9,FALSE,23,6,1,0,"5'10""",71,155,Orthodox,37,Iran,San Jose,ACA,5,8,10
+Paddy Pimblett,,10,FALSE,23,3,0,0,"5'10""",70,155,Orthodox,28,UK,Liverpool,Next Generation MMA,9,2,12
+Rafael Fiziev,Ataman,11,FALSE,13,4,0,0,"5'8""",71,155,Switch,32,Azerbaijan,Baku,Tiger Muay Thai,8,1,4
+Renato Moicano,,12,FALSE,19,7,0,0,"6'1""",73,155,Orthodox,33,Brazil,Porto Alegre,American Top Team,4,9,6

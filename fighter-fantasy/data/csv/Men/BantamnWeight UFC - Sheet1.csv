@@ -1,0 +1,14 @@
+name,nickname,ranking,is_champion,wins,losses,draws,no_contests,height,reach,weight,stance,age,nationality,hometown,gym,ko_tko,submissions,decisions
+Merab Dvalishvili,The Machine,0,TRUE,20,4,0,0,"5'6""",68,135,Orthodox,34,Georgia/USA,Tbilisi,Serra-Longo Fight Team,3,2,15
+Sean O'Malley,Suga,1,FALSE,18,3,0,1,"5'11""",72,135,Switch,30,USA,Helena MT/The MMA Lab,,12,1,5
+Umar Nurmagomedov,,2,FALSE,15,2,0,0,"5'10""",70,135,Orthodox,27,Russia,Makhachkala,American Kickboxing Academy,4,1,10
+Petr Yan,No Mercy,3,FALSE,18,4,0,0,"5'7""",70,135,Orthodox,31,Russia,near Dudinka,WHISKY MMA,9,2,7
+Cory Sandhagen,No Love,4,FALSE,18,5,0,0,"5'11""",73,135,Switch,33,USA,Thornton CO,Elevation Fight Team,8,3,7
+Song Yadong,The Smiling Assassin,5,FALSE,21,7,0,0,"5'9""",69,135,Orthodox,26,China,Zhaotong,Freestyle,10,2,9
+Deiveson Figueiredo,Deus da Guerra,6,FALSE,21,8,0,0,"5'6""",67,135,Orthodox,36,Brazil,Paranagua,Beat Boxing,12,9,0
+Marlon Vera,Chito,7,FALSE,24,11,0,0,"5'7""",73,135,Orthodox,32,Ecuadro,Guayaquil,The Pit House,8,9,7
+Mario Bautista,,8,FALSE,17,3,0,0,"5'6""",69,135,Orthodox,27,USA,Van Nuys,Glendale Fighting Club,6,2,9
+Rob Font,The Barb,9,FALSE,21,8,0,0,"5'9""",69,135,Switch,34,USA,LeominsterVT,Gracie Technics,6,4,11
+Aiemann Zahabi,,10,FALSE,12,2,0,0,"5'7""",70,135,Orthodox,32,Canada,Montreal Tristar Gym,,4,2,6
+Henry Cejudo,Triple C,11,FALSE,17,4,0,0,"5'4""",60,135,Orthodox,38,USA,Colorado Springs,Glacier Peak MX,8,7,2
+Vinicius Oliveira,,12,FALSE,14,5,0,0,"5'6""",68,135,Orthodox,29,Brazil,Porto Alegre,,7,4,3
