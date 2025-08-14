@@ -14,7 +14,9 @@
     "scrape-targeted": "tsx scripts/scrape-ufc-targeted.ts",
     "scrape-recent-events": "tsx scripts/scrape-recent-events.ts",
     "populate-fight-cards": "tsx scripts/populate-fight-cards.ts",
-    "import-fighters": "tsx scripts/import-fighter-csvs.ts"
+    "import-fighters": "tsx scripts/import-fighter-csvs.ts",
+    "fix-event-status": "tsx scripts/fix-event-status.ts",
+    "update-event-dates": "tsx scripts/update-event-dates.ts"
   },
   "dependencies": {
     "@mendable/firecrawl-js": "^1.11.3",
