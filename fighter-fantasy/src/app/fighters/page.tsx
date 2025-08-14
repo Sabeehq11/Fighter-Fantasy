@@ -1,59 +1,33 @@
 'use client';
 
+import Navigation from '@/components/Navigation';
 import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function FightersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWeightClass, setSelectedWeightClass] = useState('all');
-  const [showOnlyChampions, setShowOnlyChampions] = useState(false);
-  const [sortBy, setSortBy] = useState('rank'); // rank, name, wins
+  const [sortBy, setSortBy] = useState('rank');
+  const [showChampions, setShowChampions] = useState(false);
 
-  // Expanded fighter data with more details
-  const allFighters = [
-    // Heavyweights
-    { id: 1, name: 'Jon Jones', weightClass: 'Heavyweight', record: '27-1-0', wins: 27, rank: 'C', country: '🇺🇸', streak: 'W5', stance: 'Orthodox', reach: 84.5, height: 76 },
-    { id: 2, name: 'Stipe Miocic', weightClass: 'Heavyweight', record: '20-4-0', wins: 20, rank: '1', country: '🇺🇸', streak: 'L1', stance: 'Orthodox', reach: 80, height: 76 },
-    { id: 3, name: 'Tom Aspinall', weightClass: 'Heavyweight', record: '13-3-0', wins: 13, rank: '2', country: '🇬🇧', streak: 'W1', stance: 'Orthodox', reach: 78, height: 77 },
-    { id: 4, name: 'Sergei Pavlovich', weightClass: 'Heavyweight', record: '18-2-0', wins: 18, rank: '3', country: '🇷🇺', streak: 'L1', stance: 'Orthodox', reach: 84, height: 75 },
-    
-    // Light Heavyweights
-    { id: 5, name: 'Alex Pereira', weightClass: 'Light Heavyweight', record: '10-2-0', wins: 10, rank: 'C', country: '🇧🇷', streak: 'W3', stance: 'Orthodox', reach: 79, height: 76 },
-    { id: 6, name: 'Jamahal Hill', weightClass: 'Light Heavyweight', record: '12-2-0', wins: 12, rank: '1', country: '🇺🇸', streak: 'L1', stance: 'Southpaw', reach: 79, height: 76 },
-    { id: 7, name: 'Jiri Prochazka', weightClass: 'Light Heavyweight', record: '30-4-1', wins: 30, rank: '2', country: '🇨🇿', streak: 'L1', stance: 'Orthodox', reach: 80, height: 75 },
-    
-    // Middleweights
-    { id: 8, name: 'Sean Strickland', weightClass: 'Middleweight', record: '28-5-0', wins: 28, rank: 'C', country: '🇺🇸', streak: 'W2', stance: 'Orthodox', reach: 76, height: 73 },
-    { id: 9, name: 'Israel Adesanya', weightClass: 'Middleweight', record: '24-3-0', wins: 24, rank: '1', country: '🇳🇬', streak: 'L1', stance: 'Orthodox', reach: 80, height: 76 },
-    { id: 10, name: 'Robert Whittaker', weightClass: 'Middleweight', record: '25-7-0', wins: 25, rank: '2', country: '🇦🇺', streak: 'W1', stance: 'Orthodox', reach: 73.5, height: 72 },
-    
-    // Welterweights
-    { id: 11, name: 'Leon Edwards', weightClass: 'Welterweight', record: '22-3-0', wins: 22, rank: 'C', country: '🇬🇧', streak: 'W2', stance: 'Southpaw', reach: 74, height: 72 },
-    { id: 12, name: 'Kamaru Usman', weightClass: 'Welterweight', record: '20-3-0', wins: 20, rank: '1', country: '🇳🇬', streak: 'L2', stance: 'Orthodox', reach: 76, height: 72 },
-    { id: 13, name: 'Colby Covington', weightClass: 'Welterweight', record: '17-4-0', wins: 17, rank: '2', country: '🇺🇸', streak: 'L1', stance: 'Orthodox', reach: 72, height: 71 },
-    
-    // Lightweights
-    { id: 14, name: 'Islam Makhachev', weightClass: 'Lightweight', record: '25-1-0', wins: 25, rank: 'C', country: '🇷🇺', streak: 'W13', stance: 'Orthodox', reach: 70, height: 70 },
-    { id: 15, name: 'Charles Oliveira', weightClass: 'Lightweight', record: '34-9-0', wins: 34, rank: '1', country: '🇧🇷', streak: 'L1', stance: 'Orthodox', reach: 74, height: 70 },
-    { id: 16, name: 'Justin Gaethje', weightClass: 'Lightweight', record: '25-4-0', wins: 25, rank: '2', country: '🇺🇸', streak: 'W1', stance: 'Orthodox', reach: 70, height: 70 },
-    { id: 17, name: 'Dustin Poirier', weightClass: 'Lightweight', record: '30-8-0', wins: 30, rank: '3', country: '🇺🇸', streak: 'W1', stance: 'Southpaw', reach: 72, height: 69 },
-    
-    // Featherweights
-    { id: 18, name: 'Alexander Volkanovski', weightClass: 'Featherweight', record: '26-3-0', wins: 26, rank: 'C', country: '🇦🇺', streak: 'L2', stance: 'Orthodox', reach: 71.5, height: 66 },
-    { id: 19, name: 'Max Holloway', weightClass: 'Featherweight', record: '25-7-0', wins: 25, rank: '1', country: '🇺🇸', streak: 'W1', stance: 'Orthodox', reach: 69, height: 71 },
-    { id: 20, name: 'Yair Rodriguez', weightClass: 'Featherweight', record: '15-4-0', wins: 15, rank: '2', country: '🇲🇽', streak: 'L1', stance: 'Orthodox', reach: 71, height: 71 },
-    
-    // Bantamweights
-    { id: 21, name: "Sean O'Malley", weightClass: 'Bantamweight', record: '17-1-0', wins: 17, rank: 'C', country: '🇺🇸', streak: 'W4', stance: 'Orthodox', reach: 72, height: 71 },
-    { id: 22, name: 'Merab Dvalishvili', weightClass: 'Bantamweight', record: '17-4-0', wins: 17, rank: '1', country: '🇬🇪', streak: 'W10', stance: 'Orthodox', reach: 68, height: 66 },
-    { id: 23, name: 'Cory Sandhagen', weightClass: 'Bantamweight', record: '17-4-0', wins: 17, rank: '2', country: '🇺🇸', streak: 'W3', stance: 'Orthodox', reach: 70, height: 71 },
-    
-    // Flyweights
-    { id: 24, name: 'Alexandre Pantoja', weightClass: 'Flyweight', record: '27-5-0', wins: 27, rank: 'C', country: '🇧🇷', streak: 'W2', stance: 'Orthodox', reach: 67, height: 67 },
-    { id: 25, name: 'Brandon Royval', weightClass: 'Flyweight', record: '16-6-0', wins: 16, rank: '1', country: '🇺🇸', streak: 'W1', stance: 'Southpaw', reach: 68, height: 69 },
-    { id: 26, name: 'Brandon Moreno', weightClass: 'Flyweight', record: '21-7-2', wins: 21, rank: '2', country: '🇲🇽', streak: 'L2', stance: 'Orthodox', reach: 70, height: 67 },
+  const fighters = [
+    { id: 1, name: 'Islam Makhachev', weightClass: 'Lightweight', rank: 'C', record: '25-1', salary: 11500, height: "5'10\"", reach: '70.5"', stance: 'Orthodox', streak: 'W13' },
+    { id: 2, name: 'Jon Jones', weightClass: 'Heavyweight', rank: 'C', record: '27-1', salary: 12000, height: "6'4\"", reach: '84.5"', stance: 'Orthodox', streak: 'W1' },
+    { id: 3, name: 'Alex Pereira', weightClass: 'Light Heavyweight', rank: 'C', record: '11-2', salary: 11000, height: "6'4\"", reach: '79"', stance: 'Orthodox', streak: 'W3' },
+    { id: 4, name: 'Sean Strickland', weightClass: 'Middleweight', rank: 'C', record: '29-6', salary: 10500, height: "6'1\"", reach: '76"', stance: 'Orthodox', streak: 'L1' },
+    { id: 5, name: 'Khamzat Chimaev', weightClass: 'Welterweight', rank: 3, record: '13-0', salary: 9500, height: "6'2\"", reach: '75"', stance: 'Orthodox', streak: 'W13' },
+    { id: 6, name: 'Charles Oliveira', weightClass: 'Lightweight', rank: 1, record: '34-10', salary: 9000, height: "5'10\"", reach: '74"', stance: 'Orthodox', streak: 'W1' },
+    { id: 7, name: 'Max Holloway', weightClass: 'Featherweight', rank: 2, record: '26-7', salary: 8500, height: "5'11\"", reach: '69"', stance: 'Orthodox', streak: 'W3' },
+    { id: 8, name: 'Amanda Nunes', weightClass: "Women's Bantamweight", rank: 'C', record: '23-5', salary: 10000, height: "5'8\"", reach: '69"', stance: 'Orthodox', streak: 'RETIRED' },
+    { id: 9, name: 'Dustin Poirier', weightClass: 'Lightweight', rank: 3, record: '30-8', salary: 8000, height: "5'9\"", reach: '72"', stance: 'Southpaw', streak: 'L1' },
+    { id: 10, name: 'Israel Adesanya', weightClass: 'Middleweight', rank: 1, record: '24-3', salary: 9500, height: "6'4\"", reach: '80"', stance: 'Orthodox', streak: 'L1' },
   ];
 
   const weightClasses = [
+    'all',
     'Heavyweight',
     'Light Heavyweight', 
     'Middleweight',
@@ -61,366 +35,210 @@ export default function FightersPage() {
     'Lightweight',
     'Featherweight',
     'Bantamweight',
-    'Flyweight'
+    "Women's Bantamweight",
+    "Women's Strawweight"
   ];
 
-  // Filter and sort fighters
   const filteredFighters = useMemo(() => {
-    let filtered = allFighters;
+    let filtered = fighters;
 
-    // Search filter
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(f => 
         f.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Weight class filter
+    // Filter by weight class
     if (selectedWeightClass !== 'all') {
       filtered = filtered.filter(f => f.weightClass === selectedWeightClass);
     }
 
-    // Champions only filter
-    if (showOnlyChampions) {
+    // Filter champions
+    if (showChampions) {
       filtered = filtered.filter(f => f.rank === 'C');
     }
 
-    // Sorting
+    // Sort
     filtered.sort((a, b) => {
       if (sortBy === 'rank') {
         if (a.rank === 'C' && b.rank !== 'C') return -1;
         if (a.rank !== 'C' && b.rank === 'C') return 1;
-        if (a.rank === 'C' && b.rank === 'C') return 0;
-        return parseInt(a.rank) - parseInt(b.rank);
-      } else if (sortBy === 'name') {
+        if (typeof a.rank === 'number' && typeof b.rank === 'number') {
+          return a.rank - b.rank;
+        }
+        return 0;
+      }
+      if (sortBy === 'name') {
         return a.name.localeCompare(b.name);
-      } else if (sortBy === 'wins') {
-        return b.wins - a.wins;
+      }
+      if (sortBy === 'wins') {
+        const aWins = parseInt(a.record.split('-')[0]);
+        const bWins = parseInt(b.record.split('-')[0]);
+        return bWins - aWins;
       }
       return 0;
     });
 
     return filtered;
-  }, [searchTerm, selectedWeightClass, showOnlyChampions, sortBy]);
-
-  // Group fighters by weight class
-  const fightersByWeightClass = useMemo(() => {
-    const grouped: { [key: string]: typeof allFighters } = {};
-    
-    weightClasses.forEach(wc => {
-      grouped[wc] = filteredFighters.filter(f => f.weightClass === wc);
-    });
-
-    return grouped;
-  }, [filteredFighters]);
+  }, [searchTerm, selectedWeightClass, sortBy, showChampions]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: 'system-ui' }}>
-      {/* Navigation */}
-      <nav style={{ background: '#111', borderBottom: '1px solid #333', padding: '20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-            <span>Fighter</span>
-            <span style={{ color: '#0f0' }}>Fantasy</span>
-          </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            <a href="/" style={{ color: '#fff', textDecoration: 'none' }}>Home</a>
-            <a href="/events" style={{ color: '#fff', textDecoration: 'none' }}>Events</a>
-            <a href="/fighters" style={{ color: '#0f0', textDecoration: 'none' }}>Fighters</a>
-            <a href="/rankings" style={{ color: '#fff', textDecoration: 'none' }}>Rankings</a>
-            <a href="/fantasy" style={{ color: '#fff', textDecoration: 'none' }}>Fantasy</a>
-          </div>
-        </div>
-      </nav>
-
-      {/* Header */}
-      <section style={{ padding: '60px 20px', textAlign: 'center', borderBottom: '1px solid #333' }}>
-        <h1 style={{ fontSize: '64px', fontWeight: 'bold', marginBottom: '20px' }}>UFC FIGHTERS</h1>
-        <p style={{ fontSize: '20px', color: '#999', maxWidth: '600px', margin: '0 auto' }}>
-          Browse {allFighters.length} elite UFC fighters across all weight divisions
-        </p>
-      </section>
-
-      {/* Filters */}
-      <section style={{ padding: '30px 20px', background: '#111', borderBottom: '1px solid #333' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center' }}>
+    <div className="min-h-screen bg-black">
+      <Navigation />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-5xl font-bold mb-8 text-white">Fighters</h1>
+        
+        {/* Search and Filters */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {/* Search */}
-            <input
-              type="text"
-              placeholder="Search fighters..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                flex: '1',
-                minWidth: '200px',
-                padding: '12px 20px',
-                fontSize: '16px',
-                background: '#222',
-                border: '1px solid #444',
-                borderRadius: '5px',
-                color: '#fff'
-              }}
-            />
+            <div>
+              <Label htmlFor="search" className="text-gray-400 mb-2">Search Fighter</Label>
+              <Input
+                id="search"
+                type="text"
+                placeholder="Search by name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+              />
+            </div>
 
             {/* Weight Class Filter */}
-            <select
-              value={selectedWeightClass}
-              onChange={(e) => setSelectedWeightClass(e.target.value)}
-              style={{
-                padding: '12px 20px',
-                fontSize: '16px',
-                background: '#222',
-                border: '1px solid #444',
-                borderRadius: '5px',
-                color: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Weight Classes</option>
-              {weightClasses.map(wc => (
-                <option key={wc} value={wc}>{wc}</option>
-              ))}
-            </select>
+            <div>
+              <Label htmlFor="weight" className="text-gray-400 mb-2">Weight Class</Label>
+              <select
+                id="weight"
+                value={selectedWeightClass}
+                onChange={(e) => setSelectedWeightClass(e.target.value)}
+                className="w-full h-10 px-3 bg-gray-800 border border-gray-700 rounded-md text-white"
+              >
+                {weightClasses.map(wc => (
+                  <option key={wc} value={wc}>
+                    {wc === 'all' ? 'All Weight Classes' : wc}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Sort By */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                padding: '12px 20px',
-                fontSize: '16px',
-                background: '#222',
-                border: '1px solid #444',
-                borderRadius: '5px',
-                color: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="rank">Sort by Rank</option>
-              <option value="name">Sort by Name</option>
-              <option value="wins">Sort by Wins</option>
-            </select>
+            <div>
+              <Label htmlFor="sort" className="text-gray-400 mb-2">Sort By</Label>
+              <select
+                id="sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full h-10 px-3 bg-gray-800 border border-gray-700 rounded-md text-white"
+              >
+                <option value="rank">Rank</option>
+                <option value="name">Name</option>
+                <option value="wins">Wins</option>
+              </select>
+            </div>
 
             {/* Champions Toggle */}
-            <button
-              onClick={() => setShowOnlyChampions(!showOnlyChampions)}
-              style={{
-                padding: '12px 20px',
-                fontSize: '16px',
-                background: showOnlyChampions ? '#ffd700' : '#222',
-                color: showOnlyChampions ? '#000' : '#fff',
-                border: '1px solid #444',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              {showOnlyChampions ? '👑 Champions Only' : 'Champions Only'}
-            </button>
-
-            {/* Results Count */}
-            <div style={{ color: '#999', fontSize: '14px' }}>
-              {filteredFighters.length} fighter{filteredFighters.length !== 1 ? 's' : ''} found
+            <div className="flex items-end">
+              <Button
+                variant={showChampions ? "default" : "outline"}
+                onClick={() => setShowChampions(!showChampions)}
+                className={showChampions 
+                  ? "bg-green-500 hover:bg-green-600 text-black" 
+                  : "border-green-500 text-green-500 hover:bg-green-500 hover:text-black"}
+              >
+                🏆 Champions Only
+              </Button>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Fighters by Weight Class */}
-      <section style={{ padding: '40px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {selectedWeightClass === 'all' ? (
-            // Show grouped by weight class
-            weightClasses.map(weightClass => {
-              const fighters = fightersByWeightClass[weightClass];
-              if (fighters.length === 0) return null;
+        {/* Results Count */}
+        <p className="text-gray-400 mb-4">
+          Showing {filteredFighters.length} fighter{filteredFighters.length !== 1 ? 's' : ''}
+        </p>
 
-              return (
-                <div key={weightClass} style={{ marginBottom: '60px' }}>
-                  <h2 style={{ 
-                    fontSize: '32px', 
-                    fontWeight: 'bold', 
-                    marginBottom: '20px',
-                    padding: '10px',
-                    background: 'linear-gradient(90deg, #0f0 0%, transparent 50%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
-                    {weightClass}
-                  </h2>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                    gap: '20px' 
-                  }}>
-                    {fighters.map(fighter => (
-                      <div key={fighter.id} style={{
-                        background: fighter.rank === 'C' ? 'linear-gradient(135deg, #1a1a1a, #2a2a1a)' : '#111',
-                        border: fighter.rank === 'C' ? '2px solid #ffd700' : '1px solid #333',
-                        borderRadius: '10px',
-                        padding: '20px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-5px)';
-                        e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,255,0,0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}>
-                        {/* Champion Crown */}
-                        {fighter.rank === 'C' && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '10px',
-                            right: '10px',
-                            fontSize: '24px'
-                          }}>
-                            👑
-                          </div>
-                        )}
-
-                        {/* Fighter Info */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
-                          <span style={{ fontSize: '28px' }}>{fighter.country}</span>
-                          <span style={{
-                            background: fighter.rank === 'C' ? '#ffd700' : '#333',
-                            color: fighter.rank === 'C' ? '#000' : '#fff',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                          }}>
-                            {fighter.rank === 'C' ? 'CHAMPION' : `#${fighter.rank}`}
-                          </span>
-                        </div>
-
-                        <h3 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '10px' }}>{fighter.name}</h3>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-                          <div>
-                            <span style={{ color: '#666' }}>Record: </span>
-                            <span style={{ color: '#0f0', fontWeight: 'bold' }}>{fighter.record}</span>
-                          </div>
-                          <div>
-                            <span style={{ color: '#666' }}>Streak: </span>
-                            <span style={{ 
-                              color: fighter.streak.startsWith('W') ? '#0f0' : '#f00',
-                              fontWeight: 'bold'
-                            }}>{fighter.streak}</span>
-                          </div>
-                          <div>
-                            <span style={{ color: '#666' }}>Reach: </span>
-                            <span>{fighter.reach}"</span>
-                          </div>
-                          <div>
-                            <span style={{ color: '#666' }}>Stance: </span>
-                            <span>{fighter.stance}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+        {/* Fighters Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredFighters.map(fighter => (
+            <Card key={fighter.id} className="bg-gray-900 border-gray-800 hover:border-green-500 transition-all hover:shadow-lg hover:shadow-green-500/20">
+              <CardHeader>
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    {fighter.rank === 'C' ? (
+                      <span className="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold">
+                        CHAMPION
+                      </span>
+                    ) : (
+                      <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">
+                        #{fighter.rank}
+                      </span>
+                    )}
                   </div>
+                  <span className="text-green-500 font-bold">${fighter.salary}</span>
                 </div>
-              );
-            })
-          ) : (
-            // Show flat grid when filtered by weight class
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-              gap: '20px' 
-            }}>
-              {filteredFighters.map(fighter => (
-                <div key={fighter.id} style={{
-                  background: fighter.rank === 'C' ? 'linear-gradient(135deg, #1a1a1a, #2a2a1a)' : '#111',
-                  border: fighter.rank === 'C' ? '2px solid #ffd700' : '1px solid #333',
-                  borderRadius: '10px',
-                  padding: '20px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  position: 'relative'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,255,0,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}>
-                  {fighter.rank === 'C' && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      fontSize: '24px'
-                    }}>
-                      👑
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
-                    <span style={{ fontSize: '28px' }}>{fighter.country}</span>
-                    <span style={{
-                      background: fighter.rank === 'C' ? '#ffd700' : '#333',
-                      color: fighter.rank === 'C' ? '#000' : '#fff',
-                      padding: '4px 10px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {fighter.rank === 'C' ? 'CHAMPION' : `#${fighter.rank}`}
+                <CardTitle className="text-xl text-white">{fighter.name}</CardTitle>
+                <CardDescription className="text-gray-400">{fighter.weightClass}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-500">Record:</span>
+                    <span className="text-white ml-2">{fighter.record}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Streak:</span>
+                    <span className={`ml-2 font-semibold ${
+                      fighter.streak.startsWith('W') ? 'text-green-500' : 
+                      fighter.streak.startsWith('L') ? 'text-red-500' : 'text-gray-400'
+                    }`}>
+                      {fighter.streak}
                     </span>
                   </div>
-
-                  <h3 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '10px' }}>{fighter.name}</h3>
-                  <div style={{ color: '#999', marginBottom: '5px' }}>{fighter.weightClass}</div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-                    <div>
-                      <span style={{ color: '#666' }}>Record: </span>
-                      <span style={{ color: '#0f0', fontWeight: 'bold' }}>{fighter.record}</span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#666' }}>Streak: </span>
-                      <span style={{ 
-                        color: fighter.streak.startsWith('W') ? '#0f0' : '#f00',
-                        fontWeight: 'bold'
-                      }}>{fighter.streak}</span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#666' }}>Reach: </span>
-                      <span>{fighter.reach}"</span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#666' }}>Stance: </span>
-                      <span>{fighter.stance}</span>
-                    </div>
+                  <div>
+                    <span className="text-gray-500">Height:</span>
+                    <span className="text-white ml-2">{fighter.height}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Reach:</span>
+                    <span className="text-white ml-2">{fighter.reach}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Stance:</span>
+                    <span className="text-white ml-2">{fighter.stance}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {filteredFighters.length === 0 && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '60px 20px',
-              color: '#666'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>🥊</div>
-              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>No fighters found</h3>
-              <p>Try adjusting your search or filters</p>
-            </div>
-          )}
+                <div className="mt-4 flex gap-2">
+                  <Button className="flex-1 bg-green-500 hover:bg-green-600 text-black font-semibold" size="sm">
+                    View Profile
+                  </Button>
+                  <Button variant="outline" className="flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-black" size="sm">
+                    Add to Team
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </section>
+
+        {/* No Results */}
+        {filteredFighters.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No fighters found matching your criteria.</p>
+            <Button 
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedWeightClass('all');
+                setShowChampions(false);
+              }}
+              className="mt-4 border-green-500 text-green-500 hover:bg-green-500 hover:text-black"
+              variant="outline"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

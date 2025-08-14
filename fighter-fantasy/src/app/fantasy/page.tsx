@@ -1,194 +1,216 @@
 'use client';
 
+import Navigation from '@/components/Navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useUser } from '@/lib/hooks/useUser';
+
 export default function FantasyPage() {
+  const { isAuthenticated } = useUser();
+
+  const upcomingContests = [
+    { id: 1, event: 'UFC 298', date: 'Feb 17, 2024', prizePool: '$10,000', entries: '2,341', entryFee: '$10' },
+    { id: 2, event: 'UFC Fight Night', date: 'Feb 24, 2024', prizePool: '$5,000', entries: '1,234', entryFee: '$5' },
+    { id: 3, event: 'UFC 299', date: 'Mar 9, 2024', prizePool: '$15,000', entries: '3,456', entryFee: '$20' },
+  ];
+
+  const myTeams = [
+    { id: 1, event: 'UFC 297', score: 342, rank: 12, winnings: '$50' },
+    { id: 2, event: 'UFC 296', score: 289, rank: 45, winnings: '$0' },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: 'system-ui' }}>
-      {/* Navigation */}
-      <nav style={{ background: '#111', borderBottom: '1px solid #333', padding: '20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-            <span>Fighter</span>
-            <span style={{ color: '#0f0' }}>Fantasy</span>
-          </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            <a href="/" style={{ color: '#fff', textDecoration: 'none' }}>Home</a>
-            <a href="/events" style={{ color: '#fff', textDecoration: 'none' }}>Events</a>
-            <a href="/fighters" style={{ color: '#fff', textDecoration: 'none' }}>Fighters</a>
-            <a href="/rankings" style={{ color: '#fff', textDecoration: 'none' }}>Rankings</a>
-            <a href="/fantasy" style={{ color: '#0f0', textDecoration: 'none' }}>Fantasy</a>
-          </div>
+    <div className="min-h-screen bg-black">
+      <Navigation />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg p-8 mb-8 border border-gray-700">
+          <h1 className="text-5xl font-bold mb-4 text-white">Fighter Fantasy</h1>
+          <p className="text-xl text-gray-300 mb-6">
+            Build your dream team. Compete for prizes. Dominate the octagon.
+          </p>
+          {isAuthenticated ? (
+            <Link href="/fantasy/team-builder/1">
+              <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 text-lg">
+                Build Your Team →
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/signup">
+              <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 text-lg">
+                Sign Up to Play →
+              </Button>
+            </Link>
+          )}
         </div>
-      </nav>
 
-      {/* Hero */}
-      <section style={{ 
-        padding: '100px 20px', 
-        textAlign: 'center',
-        background: 'linear-gradient(180deg, #0f0 0%, #000 100%)',
-        color: '#000'
-      }}>
-        <h1 style={{ fontSize: '72px', fontWeight: 'bold', marginBottom: '20px' }}>FANTASY MMA</h1>
-        <p style={{ fontSize: '24px', marginBottom: '40px' }}>
-          Build your ultimate fight team and compete for glory
-        </p>
-        <button style={{
-          background: '#000',
-          color: '#0f0',
-          padding: '20px 40px',
-          border: '2px solid #000',
-          borderRadius: '5px',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }}>
-          CREATE YOUR TEAM
-        </button>
-      </section>
-
-      {/* How It Works */}
-      <section style={{ padding: '80px 20px', background: '#111' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '48px', textAlign: 'center', marginBottom: '60px' }}>How It Works</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '40px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '48px', 
-                fontWeight: 'bold', 
-                color: '#0f0',
-                marginBottom: '20px'
-              }}>1</div>
-              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>Pick Your Fighters</h3>
-              <p style={{ color: '#999' }}>Select 6 fighters within your budget</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '48px', 
-                fontWeight: 'bold', 
-                color: '#0f0',
-                marginBottom: '20px'
-              }}>2</div>
-              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>Make Predictions</h3>
-              <p style={{ color: '#999' }}>Predict fight outcomes and methods</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '48px', 
-                fontWeight: 'bold', 
-                color: '#0f0',
-                marginBottom: '20px'
-              }}>3</div>
-              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>Score Points</h3>
-              <p style={{ color: '#999' }}>Earn points based on fight results</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '48px', 
-                fontWeight: 'bold', 
-                color: '#0f0',
-                marginBottom: '20px'
-              }}>4</div>
-              <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>Win Prizes</h3>
-              <p style={{ color: '#999' }}>Compete for weekly and event prizes</p>
-            </div>
+        {/* How It Works */}
+        <section className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-white">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <div className="text-3xl mb-3">📋</div>
+                <CardTitle className="text-xl text-white">1. Build Your Team</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400">
+                  Select fighters within the salary cap. Balance stars with value picks.
+                </CardDescription>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <div className="text-3xl mb-3">🥊</div>
+                <CardTitle className="text-xl text-white">2. Score Points</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400">
+                  Earn points for strikes, takedowns, finishes, and fight outcomes.
+                </CardDescription>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <div className="text-3xl mb-3">🏆</div>
+                <CardTitle className="text-xl text-white">3. Win Prizes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400">
+                  Climb the leaderboard and win cash prizes based on your team's performance.
+                </CardDescription>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Upcoming Contests */}
-      <section style={{ padding: '80px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '48px', marginBottom: '40px' }}>Upcoming Contests</h2>
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div style={{
-              background: '#111',
-              border: '2px solid #0f0',
-              borderRadius: '10px',
-              padding: '30px',
-              display: 'grid',
-              gridTemplateColumns: '2fr 1fr 1fr',
-              gap: '20px',
-              alignItems: 'center'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>UFC 298 Fantasy Contest</h3>
-                <p style={{ color: '#999' }}>Feb 17, 2024 • Volkanovski vs Topuria</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f0' }}>$10,000</div>
-                <div style={{ color: '#999' }}>Prize Pool</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <button style={{
-                  background: '#0f0',
-                  color: '#000',
-                  padding: '15px 30px',
-                  border: 'none',
-                  borderRadius: '5px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  cursor: 'pointer'
-                }}>
-                  ENTER NOW
-                </button>
-              </div>
-            </div>
-
-            <div style={{
-              background: '#111',
-              border: '1px solid #333',
-              borderRadius: '10px',
-              padding: '30px',
-              display: 'grid',
-              gridTemplateColumns: '2fr 1fr 1fr',
-              gap: '20px',
-              alignItems: 'center'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>UFC Fight Night Contest</h3>
-                <p style={{ color: '#999' }}>Feb 24, 2024 • Moreno vs Royval 2</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f0' }}>$5,000</div>
-                <div style={{ color: '#999' }}>Prize Pool</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <button style={{
-                  background: '#333',
-                  color: '#fff',
-                  padding: '15px 30px',
-                  border: '1px solid #555',
-                  borderRadius: '5px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  cursor: 'pointer'
-                }}>
-                  ENTER NOW
-                </button>
-              </div>
-            </div>
+        {/* Upcoming Contests */}
+        <section className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-green-500">Upcoming Contests</h2>
+          <div className="grid gap-4">
+            {upcomingContests.map(contest => (
+              <Card key={contest.id} className="bg-gray-900 border-gray-800 hover:border-green-500 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">{contest.event}</h3>
+                      <div className="flex gap-6 text-sm">
+                        <span className="text-gray-400">
+                          📅 {contest.date}
+                        </span>
+                        <span className="text-green-500 font-semibold">
+                          💰 {contest.prizePool} Prize Pool
+                        </span>
+                        <span className="text-gray-400">
+                          👥 {contest.entries} entries
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500">Entry Fee</div>
+                        <div className="text-lg font-bold text-white">{contest.entryFee}</div>
+                      </div>
+                      <Link href={`/fantasy/team-builder/${contest.id}`}>
+                        <Button className="bg-green-500 hover:bg-green-600 text-black font-semibold">
+                          Enter Contest
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA */}
-      <section style={{ padding: '80px 20px', background: '#111', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '48px', marginBottom: '20px' }}>Ready to Play?</h2>
-        <p style={{ fontSize: '20px', color: '#999', marginBottom: '40px' }}>
-          Join thousands of MMA fans in the ultimate fantasy experience
-        </p>
-        <button style={{
-          background: '#0f0',
-          color: '#000',
-          padding: '20px 40px',
-          border: 'none',
-          borderRadius: '5px',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }}>
-          START PLAYING NOW
-        </button>
-      </section>
+        {/* My Recent Teams */}
+        {isAuthenticated && myTeams.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-6 text-white">My Recent Teams</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {myTeams.map(team => (
+                <Card key={team.id} className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white">{team.event}</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Final Score: {team.score} points
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-sm text-gray-500">Final Rank</div>
+                        <div className="text-2xl font-bold text-white">#{team.rank}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Winnings</div>
+                        <div className="text-2xl font-bold text-green-500">{team.winnings}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="mt-6">
+              <Link href="/fantasy/my-teams">
+                <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-500 hover:text-black">
+                  View All My Teams →
+                </Button>
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Scoring System */}
+        <section className="mt-12">
+          <h2 className="text-3xl font-bold mb-6 text-white">Scoring System</h2>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-green-500 mb-3">Fight Outcomes</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Win by KO/TKO/SUB</span>
+                      <span className="text-white font-mono">+100 pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Win by Decision</span>
+                      <span className="text-white font-mono">+75 pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">First Round Finish</span>
+                      <span className="text-white font-mono">+50 pts</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-500 mb-3">In-Fight Actions</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Significant Strike</span>
+                      <span className="text-white font-mono">+0.5 pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Takedown</span>
+                      <span className="text-white font-mono">+5 pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Knockdown</span>
+                      <span className="text-white font-mono">+20 pts</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
     </div>
   );
 } 
