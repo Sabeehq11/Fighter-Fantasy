@@ -248,78 +248,182 @@ function calculateFighterSalary(
   fight: Fight, 
   allFights: Fight[]
 ): { amount: number; factors: any } {
-  let baseScore = 1000;
+  // Base salary starts at $5,000
+  let baseScore = 5000;
+  
   const factors = {
-    ranking_score: 50,
-    odds_score: 50,
-    recent_form_score: 50,
-    popularity_score: 50
+    ranking_score: 0,
+    odds_score: 0,
+    recent_form_score: 0,
+    popularity_score: 0,
+    fight_position_score: 0
   };
   
-  // Ranking factor
+  // 1. RANKING FACTOR (up to +$3,500)
   if (fighter.isChampion) {
     factors.ranking_score = 100;
-    baseScore += 800;
-  } else if (fighter.ranking && fighter.ranking <= 5) {
-    factors.ranking_score = 90;
-    baseScore += 600;
-  } else if (fighter.ranking && fighter.ranking <= 10) {
-    factors.ranking_score = 75;
-    baseScore += 400;
-  } else if (fighter.ranking && fighter.ranking <= 15) {
-    factors.ranking_score = 60;
-    baseScore += 200;
+    baseScore += 3500;
+  } else if (fighter.ranking) {
+    if (fighter.ranking === 1) {
+      factors.ranking_score = 95;
+      baseScore += 3000;
+    } else if (fighter.ranking <= 3) {
+      factors.ranking_score = 85;
+      baseScore += 2500;
+    } else if (fighter.ranking <= 5) {
+      factors.ranking_score = 75;
+      baseScore += 2000;
+    } else if (fighter.ranking <= 10) {
+      factors.ranking_score = 60;
+      baseScore += 1200;
+    } else if (fighter.ranking <= 15) {
+      factors.ranking_score = 45;
+      baseScore += 700;
+    } else {
+      factors.ranking_score = 25;
+      baseScore += 300;
+    }
+  } else {
+    // Unranked fighter
+    factors.ranking_score = 15;
+    baseScore += 0;
   }
   
-  // Fight importance factor
+  // 2. FIGHT POSITION FACTOR (up to +$1,500)
   if (fight.is_main_event) {
-    baseScore += 500;
+    factors.fight_position_score = 100;
+    baseScore += 1500;
   } else if (fight.is_co_main) {
-    baseScore += 300;
+    factors.fight_position_score = 75;
+    baseScore += 1000;
   } else if (fight.is_title_fight) {
-    baseScore += 400;
+    factors.fight_position_score = 90;
+    baseScore += 1300;
+  } else {
+    // Card position based on bout order
+    const cardPosition = fight.bout_order || 1;
+    if (cardPosition >= 10) { // Main card
+      factors.fight_position_score = 50;
+      baseScore += 600;
+    } else if (cardPosition >= 5) { // Featured prelim
+      factors.fight_position_score = 30;
+      baseScore += 300;
+    } else { // Early prelim
+      factors.fight_position_score = 15;
+      baseScore += 100;
+    }
   }
   
-  // Odds factor (if available)
+  // 3. BETTING ODDS FACTOR (up to ±$1,500)
   if (fight.odds) {
     const fighterOdds = fight.fighter_a_id === fighter.id 
       ? fight.odds.fighter_a 
       : fight.odds.fighter_b;
     
-    if (fighterOdds < -200) {
-      factors.odds_score = 85;
-      baseScore += 400;
-    } else if (fighterOdds < -100) {
-      factors.odds_score = 70;
-      baseScore += 200;
-    } else if (fighterOdds > 150) {
+    // Heavy favorite
+    if (fighterOdds <= -300) {
+      factors.odds_score = 95;
+      baseScore += 1500;
+    } else if (fighterOdds <= -200) {
+      factors.odds_score = 80;
+      baseScore += 1000;
+    } else if (fighterOdds <= -150) {
+      factors.odds_score = 65;
+      baseScore += 600;
+    } else if (fighterOdds <= -100) {
+      factors.odds_score = 55;
+      baseScore += 300;
+    } else if (fighterOdds < 100) {
+      // Slight favorite or pick'em
+      factors.odds_score = 50;
+      baseScore += 0;
+    } else if (fighterOdds < 150) {
+      // Slight underdog
+      factors.odds_score = 40;
+      baseScore -= 300;
+    } else if (fighterOdds < 200) {
       factors.odds_score = 30;
-      baseScore -= 200;
+      baseScore -= 600;
+    } else if (fighterOdds < 300) {
+      factors.odds_score = 20;
+      baseScore -= 1000;
+    } else {
+      // Heavy underdog
+      factors.odds_score = 10;
+      baseScore -= 1500;
+    }
+  } else {
+    // No odds available, neutral
+    factors.odds_score = 50;
+  }
+  
+  // 4. RECENT FORM FACTOR (up to +$1,000)
+  const totalFights = fighter.record.wins + fighter.record.losses;
+  if (totalFights > 0) {
+    const winRate = fighter.record.wins / totalFights;
+    
+    // Also consider finish rate
+    const finishes = (fighter.finishes?.ko_tko || 0) + (fighter.finishes?.submissions || 0);
+    const finishRate = fighter.record.wins > 0 ? finishes / fighter.record.wins : 0;
+    
+    if (winRate >= 0.85) {
+      factors.recent_form_score = 90;
+      baseScore += 800;
+    } else if (winRate >= 0.75) {
+      factors.recent_form_score = 75;
+      baseScore += 600;
+    } else if (winRate >= 0.65) {
+      factors.recent_form_score = 60;
+      baseScore += 400;
+    } else if (winRate >= 0.50) {
+      factors.recent_form_score = 45;
+      baseScore += 200;
+    } else if (winRate >= 0.35) {
+      factors.recent_form_score = 30;
+      baseScore += 0;
+    } else {
+      factors.recent_form_score = 15;
+      baseScore -= 300;
+    }
+    
+    // Bonus for high finish rate
+    if (finishRate >= 0.7) {
+      baseScore += 500;
+      factors.recent_form_score += 10;
+    } else if (finishRate >= 0.5) {
+      baseScore += 250;
+      factors.recent_form_score += 5;
     }
   }
   
-  // Win streak factor
-  const recentWins = fighter.record.wins;
-  const recentLosses = fighter.record.losses;
-  const winRate = recentWins / (recentWins + recentLosses);
-  
-  if (winRate > 0.8) {
-    factors.recent_form_score = 85;
+  // 5. POPULARITY/NAME VALUE FACTOR (up to +$500)
+  // This would ideally use social media metrics, but we'll use proxies
+  if (fighter.isChampion || fighter.p4p_ranking) {
+    factors.popularity_score = 100;
+    baseScore += 500;
+  } else if (fighter.ranking && fighter.ranking <= 5) {
+    factors.popularity_score = 70;
     baseScore += 300;
-  } else if (winRate > 0.6) {
-    factors.recent_form_score = 65;
-    baseScore += 100;
+  } else if (fighter.nickname && fighter.record.wins >= 10) {
+    // Established veteran with nickname
+    factors.popularity_score = 50;
+    baseScore += 200;
+  } else {
+    factors.popularity_score = 25;
+    baseScore += 50;
   }
   
-  // Round to nearest 100
-  const finalSalary = Math.round(baseScore / 100) * 100;
+  // Round to nearest $100
+  let finalSalary = Math.round(baseScore / 100) * 100;
   
   // Ensure salary is within reasonable bounds
-  const minSalary = 1500;
-  const maxSalary = 3000;
+  const minSalary = 3500;  // Minimum salary
+  const maxSalary = 12000; // Maximum salary (for champions in main events)
+  
+  finalSalary = Math.max(minSalary, Math.min(maxSalary, finalSalary));
   
   return {
-    amount: Math.max(minSalary, Math.min(maxSalary, finalSalary)),
+    amount: finalSalary,
     factors
   };
 }
@@ -604,4 +708,66 @@ export async function updateTeamScores(teamScores: any[]): Promise<boolean> {
     console.error('Error updating team scores:', error);
     return false;
   }
+} 
+
+// ============================================
+// LOCKING FUNCTIONS
+// ============================================
+
+export async function checkAndLockTeams(eventId: string): Promise<void> {
+  try {
+    // Get the event
+    const eventDoc = await getDoc(doc(db, 'events', eventId));
+    if (!eventDoc.exists()) return;
+    const event = eventDoc.data() as Event;
+    
+    // Get the league
+    const leagueId = `league_global_${eventId}`;
+    const league = await getLeague(leagueId);
+    if (!league) return;
+    
+    // Calculate lock time
+    const eventDate = new Date(event.date_utc);
+    const lockMinutes = league.settings.lock_time_minutes_before || 15;
+    const lockTime = new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
+    
+    // Check if we should lock
+    if (new Date() < lockTime) return;
+    
+    // Get all submitted teams for this event
+    const q = query(
+      collection(db, 'teams'),
+      where('event_id', '==', eventId),
+      where('status', 'in', ['draft', 'submitted'])
+    );
+    
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    
+    snapshot.docs.forEach(teamDoc => {
+      batch.update(teamDoc.ref, {
+        status: 'locked',
+        locked_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
+    });
+    
+    // Also update the league status
+    await updateDoc(doc(db, 'leagues', leagueId), {
+      status: 'locked',
+      updated_at: serverTimestamp()
+    });
+    
+    await batch.commit();
+    console.log(`Locked ${snapshot.size} teams for event ${eventId}`);
+  } catch (error) {
+    console.error('Error locking teams:', error);
+  }
+}
+
+export function isTeamLocked(event: Event, league: League): boolean {
+  const eventDate = new Date(event.date_utc);
+  const lockMinutes = league.settings.lock_time_minutes_before || 15;
+  const lockTime = new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
+  return new Date() >= lockTime;
 } 

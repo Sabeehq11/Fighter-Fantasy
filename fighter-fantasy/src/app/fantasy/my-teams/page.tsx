@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { FantasyTeam, Event, Fighter, League } from '@/types';
-import { getUserTeams, getTeam, deleteTeam, getLeague } from '@/services/fantasyService';
+import { getUserTeams, deleteTeam, getLeague } from '@/services/fantasyService';
 import { getEvents, getFighters } from '@/services/dataService';
-import { format } from 'date-fns';
+import { format, differenceInSeconds } from 'date-fns';
 
 interface TeamWithDetails extends FantasyTeam {
   event?: Event;
   league?: League;
   fighterDetails?: Map<string, Fighter>;
+  lockTime?: Date;
+  isLocked?: boolean;
+  timeUntilLock?: string;
 }
 
 export default function MyTeamsPage() {
@@ -53,6 +56,7 @@ export default function MyTeamsPage() {
       const enrichedTeams: TeamWithDetails[] = await Promise.all(
         userTeams.map(async (team) => {
           const league = team.league_id ? await getLeague(team.league_id) : null;
+          const event = eventMap.get(team.event_id);
           const fighterDetails = new Map<string, Fighter>();
           
           team.picks.forEach(pick => {
@@ -62,11 +66,23 @@ export default function MyTeamsPage() {
             }
           });
           
+          // Calculate lock time
+          let lockTime: Date | undefined;
+          let isLocked = false;
+          if (event && league) {
+            const eventDate = new Date(event.date_utc);
+            const lockMinutes = league.settings.lock_time_minutes_before || 15;
+            lockTime = new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
+            isLocked = new Date() >= lockTime || team.status === 'locked' || team.status === 'scored';
+          }
+          
           return {
             ...team,
-            event: eventMap.get(team.event_id),
+            event,
             league: league || undefined,
-            fighterDetails
+            fighterDetails,
+            lockTime,
+            isLocked
           };
         })
       );
@@ -85,6 +101,54 @@ export default function MyTeamsPage() {
       setLoading(false);
     }
   };
+
+  // Add countdown timer update effect
+  useEffect(() => {
+    if (teams.length === 0) return;
+
+    const updateCountdowns = () => {
+      setTeams(prevTeams => 
+        prevTeams.map(team => {
+          if (!team.lockTime || team.isLocked) return team;
+
+          const now = new Date();
+          const locked = now >= team.lockTime;
+          
+          if (!locked) {
+            const secondsRemaining = differenceInSeconds(team.lockTime, now);
+            if (secondsRemaining > 0) {
+              const hours = Math.floor(secondsRemaining / 3600);
+              const minutes = Math.floor((secondsRemaining % 3600) / 60);
+              const seconds = secondsRemaining % 60;
+
+              let timeUntilLock = '';
+              if (hours > 24) {
+                const days = Math.floor(hours / 24);
+                timeUntilLock = `${days}d ${hours % 24}h`;
+              } else if (hours > 0) {
+                timeUntilLock = `${hours}h ${minutes}m`;
+              } else if (minutes > 0) {
+                timeUntilLock = `${minutes}m ${seconds}s`;
+              } else {
+                timeUntilLock = `${seconds}s`;
+              }
+
+              return { ...team, timeUntilLock, isLocked: false };
+            }
+          }
+          
+          return { ...team, isLocked: true, timeUntilLock: 'LOCKED' };
+        })
+      );
+    };
+
+    // Initial update
+    updateCountdowns();
+
+    // Update every second
+    const interval = setInterval(updateCountdowns, 1000);
+    return () => clearInterval(interval);
+  }, [teams.length]);
 
   const handleDeleteTeam = async (teamId: string) => {
     if (!confirm('Are you sure you want to delete this team?')) return;
@@ -220,6 +284,14 @@ export default function MyTeamsPage() {
                       }`}>
                         {team.status.toUpperCase()}
                       </div>
+                      
+                      {/* Lock Status */}
+                      {(team.status === 'draft' || team.status === 'submitted') && team.timeUntilLock && (
+                        <div className={`mt-2 text-sm ${team.isLocked ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {team.isLocked ? '🔒 Locked' : `⏱️ ${team.timeUntilLock}`}
+                        </div>
+                      )}
+                      
                       {team.total_points !== undefined && team.total_points > 0 && (
                         <div className="mt-2">
                           <div className="text-2xl font-bold">{team.total_points} pts</div>
@@ -286,19 +358,27 @@ export default function MyTeamsPage() {
                   <div className="flex gap-3">
                     {team.status === 'draft' && team.event?.status === 'upcoming' && (
                       <>
-                        <Link
-                          href={`/fantasy/team-builder/${team.event_id}?teamId=${team.id}`}
-                          className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                        >
-                          Edit Team
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteTeam(team.id)}
-                          disabled={deletingTeamId === team.id}
-                          className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                        >
-                          {deletingTeamId === team.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                        {!team.isLocked ? (
+                          <>
+                            <Link
+                              href={`/fantasy/team-builder/${team.event_id}?teamId=${team.id}`}
+                              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                            >
+                              Edit Team
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteTeam(team.id)}
+                              disabled={deletingTeamId === team.id}
+                              className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                            >
+                              {deletingTeamId === team.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="text-sm text-red-400 py-2">
+                            ⚠️ Team locked - Event starting soon
+                          </div>
+                        )}
                       </>
                     )}
                     {(team.status === 'submitted' || team.status === 'locked' || team.status === 'scored') && (

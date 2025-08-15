@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { 
@@ -22,7 +22,7 @@ import {
   validateTeam,
   createGlobalLeague
 } from '@/services/fantasyService';
-import { format } from 'date-fns';
+import { format, differenceInMinutes, differenceInSeconds } from 'date-fns';
 
 interface FighterWithSalary extends Fighter {
   salary: number;
@@ -49,6 +49,8 @@ export default function TeamBuilder() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDivision, setFilterDivision] = useState('all');
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [timeUntilLock, setTimeUntilLock] = useState<string>('');
+  const [isLocked, setIsLocked] = useState(false);
 
   // Calculate budget
   const totalSalary = selectedFighters.reduce((sum, pick) => sum + pick.salary, 0);
@@ -173,6 +175,11 @@ export default function TeamBuilder() {
   };
 
   const toggleFighterSelection = useCallback((fighter: FighterWithSalary) => {
+    if (isLocked) {
+      setErrors(['Team builder is locked. No changes allowed.']);
+      return;
+    }
+
     setSelectedFighters(prev => {
       const isSelected = prev.some(p => p.fighter_id === fighter.id);
       
@@ -211,10 +218,14 @@ export default function TeamBuilder() {
         return [...prev, newPick];
       }
     });
-  }, [league, totalSalary]);
+  }, [league, totalSalary, isLocked]);
 
   const toggleCaptain = useCallback((fighterId: string) => {
     if (!league?.settings.allow_captain) return;
+    if (isLocked) {
+      setErrors(['Team builder is locked. No changes allowed.']);
+      return;
+    }
 
     setSelectedFighters(prev => 
       prev.map(pick => ({
@@ -222,10 +233,15 @@ export default function TeamBuilder() {
         is_captain: pick.fighter_id === fighterId ? !pick.is_captain : false
       }))
     );
-  }, [league]);
+  }, [league, isLocked]);
 
   const handleSaveDraft = async () => {
     if (!user || !league || !event) return;
+
+    if (isLocked) {
+      setErrors(['Team builder is locked. No changes can be made.']);
+      return;
+    }
 
     setSaving(true);
     setErrors([]);
@@ -263,6 +279,11 @@ export default function TeamBuilder() {
 
   const handleSubmitTeam = async () => {
     if (!user || !league || !event) return;
+
+    if (isLocked) {
+      setErrors(['Team builder is locked. Submissions are closed.']);
+      return;
+    }
 
     // Validate team
     const validation = validateTeam(selectedFighters, league, fights);
@@ -322,6 +343,55 @@ export default function TeamBuilder() {
   // Get unique divisions
   const divisions = Array.from(new Set(fighters.map(f => f.division)));
 
+  // Calculate lock time
+  const lockTime = useMemo(() => {
+    if (!event || !league) return null;
+    const eventDate = new Date(event.date_utc);
+    const lockMinutes = league.settings.lock_time_minutes_before || 15;
+    return new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
+  }, [event, league]);
+
+  // Check if team builder is locked
+  useEffect(() => {
+    if (!lockTime) return;
+
+    const checkLockStatus = () => {
+      const now = new Date();
+      const locked = now >= lockTime;
+      setIsLocked(locked);
+
+      if (!locked) {
+        // Calculate time remaining
+        const secondsRemaining = differenceInSeconds(lockTime, now);
+        if (secondsRemaining > 0) {
+          const hours = Math.floor(secondsRemaining / 3600);
+          const minutes = Math.floor((secondsRemaining % 3600) / 60);
+          const seconds = secondsRemaining % 60;
+
+          if (hours > 24) {
+            const days = Math.floor(hours / 24);
+            setTimeUntilLock(`${days}d ${hours % 24}h`);
+          } else if (hours > 0) {
+            setTimeUntilLock(`${hours}h ${minutes}m`);
+          } else if (minutes > 0) {
+            setTimeUntilLock(`${minutes}m ${seconds}s`);
+          } else {
+            setTimeUntilLock(`${seconds}s`);
+          }
+        }
+      } else {
+        setTimeUntilLock('LOCKED');
+      }
+    };
+
+    // Check immediately
+    checkLockStatus();
+
+    // Update every second
+    const interval = setInterval(checkLockStatus, 1000);
+    return () => clearInterval(interval);
+  }, [lockTime]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -351,10 +421,19 @@ export default function TeamBuilder() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold">
-                ${remainingBudget.toLocaleString()}
+              <div className={`text-sm font-medium ${isLocked ? 'text-red-500' : 'text-yellow-400'}`}>
+                {isLocked ? (
+                  <div>
+                    <span className="text-lg">🔒 TEAM LOCKED</span>
+                    <p className="text-xs text-gray-400">No changes allowed</p>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-lg">⏱️ Lock in: {timeUntilLock}</span>
+                    <p className="text-xs text-gray-400">Teams lock {league?.settings.lock_time_minutes_before || 15} min before event</p>
+                  </div>
+                )}
               </div>
-              <div className="text-sm text-gray-400">Remaining Budget</div>
             </div>
           </div>
 
@@ -371,6 +450,33 @@ export default function TeamBuilder() {
               {selectedFighters.length}/{league.settings.team_size} Fighters
             </div>
           </div>
+
+          {/* Budget Bar */}
+          <div className="bg-gray-800 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-400">Budget Used</span>
+              <span className={`font-bold ${remainingBudget < 0 ? 'text-red-500' : 'text-green-400'}`}>
+                ${remainingBudget.toFixed(0)} remaining
+              </span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all ${
+                  remainingBudget < 0 ? 'bg-red-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min(100, (totalSalary / (league?.settings.budget || 10000)) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Lock Warning */}
+          {isLocked && (
+            <div className="mt-3 bg-red-900/50 border border-red-700 rounded-lg p-3">
+              <p className="text-red-400 text-sm font-medium">
+                ⚠️ Team builder is locked. The event has started or is about to start.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -558,7 +664,7 @@ export default function TeamBuilder() {
               <div className="space-y-3">
                 <button
                   onClick={handleSaveDraft}
-                  disabled={selectedFighters.length === 0 || saving}
+                  disabled={selectedFighters.length === 0 || saving || isLocked}
                   className="w-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors"
                 >
                   {saving ? 'Saving...' : 'Save Draft'}
@@ -568,7 +674,8 @@ export default function TeamBuilder() {
                   disabled={
                     selectedFighters.length !== league?.settings.team_size || 
                     saving ||
-                    remainingBudget < 0
+                    remainingBudget < 0 ||
+                    isLocked
                   }
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-800 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-colors"
                 >

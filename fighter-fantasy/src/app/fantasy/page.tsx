@@ -1,19 +1,54 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useUser } from '@/lib/hooks/useUser';
+import { dataService } from '@/services/dataService';
+import { Event } from '@/types';
 
 export default function FantasyPage() {
   const { isAuthenticated } = useUser();
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const upcomingContests = [
-    { id: 1, event: 'UFC 298', date: 'Feb 17, 2024', prizePool: '$10,000', entries: '2,341', entryFee: '$10' },
-    { id: 2, event: 'UFC Fight Night', date: 'Feb 24, 2024', prizePool: '$5,000', entries: '1,234', entryFee: '$5' },
-    { id: 3, event: 'UFC 299', date: 'Mar 9, 2024', prizePool: '$15,000', entries: '3,456', entryFee: '$20' },
-  ];
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, []);
+
+  const fetchUpcomingEvents = async () => {
+    try {
+      setLoading(true);
+      // Fetch upcoming events
+      const upcoming = await dataService.getUpcomingEvents(5);
+      setUpcomingEvents(upcoming);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  // Calculate contest details based on event type
+  const getContestDetails = (event: Event) => {
+    const isPPV = event.type === 'PPV';
+    return {
+      prizePool: isPPV ? '$15,000' : '$5,000',
+      entryFee: isPPV ? '$20' : '$10',
+      entries: isPPV ? '3,456' : '1,234', // These could be fetched from a contests collection later
+    };
+  };
 
   const myTeams = [
     { id: 1, event: 'UFC 297', score: 342, rank: 12, winnings: '$50' },
@@ -32,11 +67,17 @@ export default function FantasyPage() {
             Build your dream team. Compete for prizes. Dominate the octagon.
           </p>
           {isAuthenticated ? (
-            <Link href="/fantasy/team-builder/1">
-              <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 text-lg">
-                Build Your Team →
+            upcomingEvents.length > 0 ? (
+              <Link href={`/fantasy/team-builder/${upcomingEvents[0].id}`}>
+                <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 text-lg">
+                  Build Your Team →
+                </Button>
+              </Link>
+            ) : (
+              <Button disabled className="bg-gray-600 text-gray-300 font-bold px-6 py-3 text-lg cursor-not-allowed">
+                No Events Available
               </Button>
-            </Link>
+            )
           ) : (
             <Link href="/signup">
               <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 text-lg">
@@ -91,41 +132,62 @@ export default function FantasyPage() {
         {/* Upcoming Contests */}
         <section className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-green-500">Upcoming Contests</h2>
-          <div className="grid gap-4">
-            {upcomingContests.map(contest => (
-              <Card key={contest.id} className="bg-gray-900 border-gray-800 hover:border-green-500 transition-colors">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-2">{contest.event}</h3>
-                      <div className="flex gap-6 text-sm">
-                        <span className="text-gray-400">
-                          📅 {contest.date}
-                        </span>
-                        <span className="text-green-500 font-semibold">
-                          💰 {contest.prizePool} Prize Pool
-                        </span>
-                        <span className="text-gray-400">
-                          👥 {contest.entries} entries
-                        </span>
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="text-white text-lg">Loading contests...</div>
+            </div>
+          ) : upcomingEvents.length > 0 ? (
+            <div className="grid gap-4">
+              {upcomingEvents.map(event => {
+                const contestDetails = getContestDetails(event);
+                return (
+                  <Card key={event.id} className="bg-gray-900 border-gray-800 hover:border-green-500 transition-colors">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-2">{event.name}</h3>
+                          <div className="flex gap-6 text-sm">
+                            <span className="text-gray-400">
+                              📅 {formatDate(event.date_utc)}
+                            </span>
+                            <span className="text-green-500 font-semibold">
+                              💰 {contestDetails.prizePool} Prize Pool
+                            </span>
+                            <span className="text-gray-400">
+                              👥 {contestDetails.entries} entries
+                            </span>
+                            {event.type === 'PPV' && (
+                              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full text-xs">
+                                PPV EVENT
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">Entry Fee</div>
+                            <div className="text-lg font-bold text-white">{contestDetails.entryFee}</div>
+                          </div>
+                          <Link href={`/fantasy/team-builder/${event.id}`}>
+                            <Button className="bg-green-500 hover:bg-green-600 text-black font-semibold">
+                              Enter Contest
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-xs text-gray-500">Entry Fee</div>
-                        <div className="text-lg font-bold text-white">{contest.entryFee}</div>
-                      </div>
-                      <Link href={`/fantasy/team-builder/${contest.id}`}>
-                        <Button className="bg-green-500 hover:bg-green-600 text-black font-semibold">
-                          Enter Contest
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-400 text-lg">No upcoming contests available</p>
+                <p className="text-gray-500 mt-2">Check back soon for new UFC events!</p>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* My Recent Teams */}

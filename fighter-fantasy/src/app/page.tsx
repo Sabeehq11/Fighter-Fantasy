@@ -1,14 +1,72 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import Link from 'next/link';
 import { useUser } from '@/lib/hooks/useUser';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
+import { dataService } from '@/services/dataService';
+import { Event, Fight } from '@/types';
 
 export default function Home() {
   const { user, isAuthenticated } = useUser();
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [mainEvents, setMainEvents] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, []);
+
+  const fetchUpcomingEvents = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch upcoming events (limited to 3 for home page)
+      const upcoming = await dataService.getUpcomingEvents(3);
+      setUpcomingEvents(upcoming);
+      
+      // Fetch main event fights for each event
+      const mainEventPromises = upcoming.map(async (event) => {
+        const fights = await dataService.getEventFights(event.id);
+        // The main event is typically the fight with the highest bout_order
+        const mainFight = fights.find(f => f.is_main_event) || fights[0];
+        if (mainFight) {
+          // Handle both possible data structures (with names or IDs)
+          const fighterAName = (mainFight as any).fighter_a_name || 'Fighter A';
+          const fighterBName = (mainFight as any).fighter_b_name || 'Fighter B';
+          return {
+            eventId: event.id,
+            mainEvent: `${fighterAName} vs ${fighterBName}`
+          };
+        }
+        return { eventId: event.id, mainEvent: 'TBA' };
+      });
+      
+      const mainEventResults = await Promise.all(mainEventPromises);
+      const mainEventsMap: { [key: string]: string } = {};
+      mainEventResults.forEach(result => {
+        mainEventsMap[result.eventId] = result.mainEvent;
+      });
+      
+      setMainEvents(mainEventsMap);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    }).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-black relative">
@@ -170,32 +228,64 @@ export default function Home() {
             <h2 className="text-5xl font-bold text-center mb-16 text-white drop-shadow-2xl">
               Upcoming Events
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-2xl hover:border-green-900/50 transition-all">
-                <div className="text-green-400 text-sm font-medium mb-2">FEBRUARY 17, 2024</div>
-                <h3 className="text-2xl font-bold mb-2 text-white">UFC 298</h3>
-                <p className="text-gray-400 mb-4">Volkanovski vs Topuria</p>
-                <Link href="/events/1" className="text-green-400 hover:text-green-300 transition-colors font-medium">
-                  View Event →
+            
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-white text-xl">Loading events...</div>
+              </div>
+            ) : upcomingEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingEvents.map((event) => (
+                  <div 
+                    key={event.id}
+                    className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-2xl hover:border-green-900/50 transition-all"
+                  >
+                    <div className="text-green-400 text-sm font-medium mb-2">
+                      {formatDate(event.date_utc)}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-2 text-white">
+                      {event.name}
+                    </h3>
+                    <p className="text-gray-400 mb-4">
+                      {mainEvents[event.id] || 'Card to be announced'}
+                    </p>
+                    {event.type === 'PPV' && (
+                      <span className="inline-block px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full mb-3">
+                        💰 PAY-PER-VIEW
+                      </span>
+                    )}
+                    <Link 
+                      href={`/events/${event.id}`} 
+                      className="text-green-400 hover:text-green-300 transition-colors font-medium block"
+                    >
+                      View Event →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg">No upcoming events scheduled</p>
+                <Link href="/events" className="text-green-400 hover:text-green-300 mt-4 inline-block">
+                  View Past Events →
                 </Link>
               </div>
-              <div className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-2xl hover:border-green-900/50 transition-all">
-                <div className="text-green-400 text-sm font-medium mb-2">FEBRUARY 24, 2024</div>
-                <h3 className="text-2xl font-bold mb-2 text-white">UFC Fight Night</h3>
-                <p className="text-gray-400 mb-4">Moreno vs Royval 2</p>
-                <Link href="/events/2" className="text-green-400 hover:text-green-300 transition-colors font-medium">
-                  View Event →
+            )}
+            
+            {/* View All Events Button */}
+            {upcomingEvents.length > 0 && (
+              <div className="text-center mt-12">
+                <Link href="/events">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-green-500 text-green-400 hover:bg-green-500 hover:text-black"
+                  >
+                    View All Events →
+                  </Button>
                 </Link>
               </div>
-              <div className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-2xl hover:border-green-900/50 transition-all">
-                <div className="text-green-400 text-sm font-medium mb-2">MARCH 9, 2024</div>
-                <h3 className="text-2xl font-bold mb-2 text-white">UFC 299</h3>
-                <p className="text-gray-400 mb-4">O'Malley vs Vera 2</p>
-                <Link href="/events/3" className="text-green-400 hover:text-green-300 transition-colors font-medium">
-                  View Event →
-                </Link>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
