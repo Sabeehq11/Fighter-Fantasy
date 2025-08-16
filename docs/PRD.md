@@ -1,7 +1,7 @@
 # Fighter Fantasy - Product Requirements Document
 
 ## Executive Summary
-Fighter Fantasy is a web-based UFC companion application featuring real-time event tracking, comprehensive fighter profiles, division rankings, and an engaging Fantasy UFC game mode where users build fighter teams and compete for points based on real fight outcomes.
+Fighter Fantasy is a web-based UFC companion application featuring real-time event tracking, comprehensive fighter profiles, division rankings, and an engaging Fantasy UFC game mode where users compete by predicting outcomes of main-card fights per event.
 
 ## Project Scope
 
@@ -11,7 +11,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
   - UFC event browsing with countdowns
   - Fighter profiles and statistics
   - Division rankings
-  - Fantasy UFC team building and scoring
+  - Fantasy UFC prediction contests (Main-Card Prediction Mode)
 - **Data Strategy**: Seed a dev Firestore with a real initial dataset; integrate scraped data in Phase 6
 - **User Management**: Authentication and user profiles via Firebase
 
@@ -21,9 +21,9 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 - Second screen features
 - AI fight predictions
 - Fight Camp Planner
-- Private fantasy leagues
+- Private fantasy leagues (Phase 2)
 - Live fight tracking
-- Betting integration
+- Real-money wagering
 
 ## Core User Personas
 
@@ -33,8 +33,8 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 - **Pain Points**: Information scattered across multiple sites
 
 ### 2. Fantasy Sports Enthusiast
-- **Needs**: Strategic team building, clear scoring system, competitive leaderboards
-- **Goals**: Win fantasy competitions, optimize team selection
+- **Needs**: Strategic picks, clear scoring system, competitive leaderboards
+- **Goals**: Win fantasy contests, optimize predictions
 - **Pain Points**: Lack of UFC-specific fantasy platforms
 
 ### 3. Hardcore MMA Analyst
@@ -165,88 +165,104 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 - Title defense records
 - Historical ranking snapshots
 
-### 5. Fantasy UFC System
+### 5. Fantasy UFC System — Main-Card Prediction Mode
 
 #### 5.1 Fantasy Hub (`/fantasy`)
 **Landing Page**:
-- Current/upcoming fantasy contests
-- "Create Your Team" CTA
+- Current/upcoming event contests
+- "Enter Contest" CTA
 - Global leaderboard preview
-- Your active teams
-- Fantasy scoring explanation
+- Your active teams (entries)
+- Fantasy rules overview
 
-#### 5.2 Team Builder (`/fantasy/team-builder`)
-**Event Selection**:
-- Choose from upcoming events only
-- Show event date and lock time
-- Display total prize pool (if applicable)
+#### 5.2 Team Builder (`/fantasy/team-builder/[eventId]`)
+**Contest Scope**:
+- Per-event contest using the event’s main-card fights only
+- Roster size flexes with number of main-card fights
 
-**Fighter Selection Interface**:
-- All fighters on the card with:
-  - Photo and name
-  - Salary/cost
-  - Projected points (Phase 2)
-  - Recent fantasy performance
-- Budget tracker: $10,000 total
-- Team slots: 5 fighters required
-- Duplicate prevention
-- Auto-save draft functionality
+**Picks UI (per fight)**:
+- Select exactly one fighter
+- Predictions: Method (KO/TKO, Submission, Decision, DQ, Draw), Round (R1–R5 or GTD)
+- Optional free-text prediction
+- Optional single Captain: ×1.25 multiplier on that fighter only
 
-**Team Constraints**:
-- Cannot pick both fighters from same matchup
-- Budget limit enforcement
-- Minimum 5 fighters required
-- Lock time: 15 minutes before first prelim
+**Validation**:
+- Cannot pick both fighters from the same fight
+- Must submit one pick per main-card fight
+- Auto-save draft
+
+**Lock & Fairness**:
+- Lock 15 minutes before the main card
+- No edits after lock
+- Lineups revealed after lock (or after first fight)
+- Cancelled fight after lock: both fighters score 0, no penalty
+- Fighter replacement after lock: picks on the unchanged fighter remain valid and are graded against the new opponent; picks on the replaced fighter grade as did-not-compete; coins on that pick are refunded
 
 #### 5.3 Scoring System
-**Base Points**:
-- Participation: +2
-- Win: +10
-- Loss: -5
+**Base Prediction**:
+- Winner correct: +10
+- Method correct: +5
+- Round correct: +3
+- Close round (±1, finishes only): +1
+- Decision called and fight goes distance: +3
 
-**Finish Bonuses**:
-- KO/TKO: +12
-- Submission: +12
-- Decision: +6
+**Performance Overlay (capped; applies to picked fighter)**:
+- Weights (per fighter):
+  - Knockdowns: +2 each (cap +4)
+  - Significant strikes: +0.05 each (cap +3)
+  - Takedowns: +1 each (cap +3)
+  - Control time: +1 per full 60 sec (cap +3)
+  - Submission attempts: +1 each (cap +3)
+  - Reversals: +1 each (cap +2)
+- Fight caps: 3-round max +8, 5-round max +10
+- If pick wins: award full computed performance (capped)
+- If pick loses: award 50% of computed performance (rounded down, capped)
 
-**Round Bonuses** (for finishes):
-- Round 1: +8
-- Round 2: +6
-- Round 3: +4
-- Round 4: +3
-- Round 5: +2
+**Finish/Early Bonuses**:
+- Early finish boost (win by finish): R1 +5, R2 +3, R3 +1; Championship R4/R5 +1
 
-**Performance Points**:
-- Knockdown: +3 each
-- Significant strikes: +0.1 each (max +10)
-- Takedowns: +2 each
-- Control time: +1 per 60 seconds
-- Submission attempts: +2 each (max +6)
+**Technique Rarity Multiplier (finish only)**:
+- Tier S: ×1.30; Tier A: ×1.15; Tier B: ×1.05; Decision: ×1.00
 
-**Special Bonuses**:
-- Title fight win: +5
-- Underdog win multipliers:
-  - +200 to +399 odds: 1.2x
-  - +400 and above: 1.5x
+**Underdog Multiplier (win only; closing odds; skip if missing)**:
+- +100 to +199 → ×1.10
+- +200 to +399 → ×1.20
+- +400+ → ×1.35
 
-**Penalties**:
-- Missed weight: -3
-- Point deduction: -2 per point
-- DQ loss: -10
+**Context & Penalties**:
+- Title fight win: +2
+- Short-notice winner (≤10 days): +2
+- Missed weight: –2
+- DQ loss: –5
+- No contest: +1 participation only
 
-#### 5.4 Leaderboards (`/fantasy/leaderboard/[event-id]`)
-- Real-time scoring updates
-- Rank, username, team name, total points
-- Expandable to see team composition
-- Filter by friends (Phase 2)
-- Prize distribution display
+**Captain**:
+- One fighter gets ×1.25 on their final total
 
-#### 5.5 My Teams (`/fantasy/my-teams`)
-- Active teams (not yet scored)
-- Past teams with scores
-- Win/loss record
-- Total points earned
-- Best finish position
+**Application Order**:
+1) Base prediction → 2) Performance overlay → 3) Early finish boost → 4) Context/penalties → 5) Technique rarity multiplier (excludes performance) → 6) Underdog multiplier (win only; includes performance) → 7) Captain ×1.25
+
+#### 5.4 Leagues & Contests
+- League types: Global (default per event), Public, Private (invite link/code)
+- A League contains multiple event contests (one per UFC event)
+- Roster visibility: show opponents’ picks after lock
+- Duplicate prevention per matchup
+
+#### 5.5 Coins (Optional Side Economy)
+- Stake Coins on your own pick before lock:
+  - Winner (low payout)
+  - Winner + Method (medium)
+  - Winner + Method + Round (high)
+- Payouts v1: fixed tiers (configurable); odds-based later
+- Coins never affect leaderboard points; refund if fight is cancelled after lock
+
+#### 5.6 Tie-Breakers
+- 1) Fewest roster edits before lock
+- 2) Earliest lineup submission
+
+#### 5.7 Leaderboards
+- Event Leaderboard: per League and Global
+- Season Leaderboard (optional): sum each player’s best N event scores
 
 ### 6. User Account System
 
@@ -282,7 +298,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 #### 7.2 Fantasy Administration
 - Lock/unlock events
 - Trigger scoring calculation
-- Adjust point values
+- Adjust point values via rules config
 - Resolve disputes
 
 ## User Flows
@@ -297,15 +313,14 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 7. Returns to event page
 8. Sets reminder (Phase 2)
 
-### Flow 2: Building a Fantasy Team
+### Flow 2: Entering a Fantasy Contest
 1. User navigates to Fantasy hub
-2. Selects upcoming event
+2. Selects upcoming event contest
 3. Enters team builder
-4. Reviews available fighters and salaries
-5. Selects 5 fighters within budget
-6. Saves team as draft
-7. Returns before lock time to finalize
-8. Team locks automatically at deadline
+4. Makes one pick per main-card fight (winner + method + round)
+5. Optionally selects a Captain and writes free-text
+6. Optionally stakes Coins on picks
+7. Submission locks automatically at deadline
 
 ### Flow 3: Checking Rankings
 1. User clicks Rankings nav item
@@ -316,10 +331,10 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 
 ### Flow 4: Post-Event Fantasy Scoring
 1. Event concludes
-2. Admin uploads results
-3. System calculates points
+2. Admin uploads results (technique, odds, narrative tags)
+3. System calculates points (prediction-first with performance overlay)
 4. User checks leaderboard
-5. Views detailed scoring breakdown
+5. Views per-fight scoring breakdown
 6. Shares results (Phase 2)
 
 ## Success Metrics
@@ -327,13 +342,13 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 ### User Engagement
 - Daily active users
 - Events viewed per session
-- Fantasy team creation rate
-- Return user rate (weekly)
+- Fantasy contest entry rate
+- Return user rate (weekly cadence)
 
 ### Fantasy Metrics
-- Teams created per event
+- Entries created per event
 - User retention event-to-event
-- Average team modifications before lock
+- Average edits before lock
 - Leaderboard participation rate
 
 ### Technical Metrics
@@ -368,11 +383,10 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 ### Freemium Model
 **Free Tier**:
 - View all events and fighters
-- Create one fantasy team per event
-- Access to global leaderboard
+- Enter one fantasy contest per event
+- Access global leaderboard
 
 **Premium Tier** ($5/month):
-- Multiple fantasy teams per event
 - Private leagues
 - Advanced statistics
 - Ad-free experience
@@ -390,7 +404,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 
 ### Legal Risks
 - **Risk**: Copyright on fighter images
-- **Mitigation**: Use official UFC API if available, or placeholder images
+- **Mitigation**: Use official UFC API if available, or licensed images
 
 ### Technical Risks
 - **Risk**: High traffic during major events
@@ -398,7 +412,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 
 ### User Adoption Risks
 - **Risk**: Low fantasy participation
-- **Mitigation**: Free tier, easy onboarding, clear value prop
+- **Mitigation**: Simple scoring, clear UI, free entry, social hooks
 
 ## Future Roadmap
 
@@ -407,7 +421,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 - Push notifications
 - Social features (following, sharing)
 - Advanced fighter analytics
-- Prediction game mode
+- Odds-based coin payouts
 
 ### Phase 3
 - Mobile native apps
@@ -417,7 +431,7 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 - Training camp updates
 
 ### Phase 4
-- Betting odds integration
+- Real-money wagering (compliance)
 - Podcast/media integration
 - Fighter AMA platform
 - VIP experiences
@@ -449,47 +463,3 @@ Fighter Fantasy is a web-based UFC companion application featuring real-time eve
 10. Women's Bantamweight (135 lbs)
 11. Women's Flyweight (125 lbs)
 12. Women's Strawweight (115 lbs) 
-
-## Fantasy Extensions (Finalized Rules)
-
-### Weekly Event (Salary Cap)
-- Remains the core weekly game: pick 5 fighters within budget.
-- Optional Captain slot enabled for Global League: 1 fighter gets a 1.5x multiplier.
-- Duplicate picks within the same matchup are still disallowed.
-
-### Event Multipliers (PPV “Majors”)
-- PPV events apply a 1.5x event multiplier to the team’s final total.
-- Applied after summing all fighters’ totals (including Captain effect and underdog multipliers).
-
-### One-and-Done Season Overlay
-- Parallel season-long mode running alongside weekly contests.
-- Pick exactly ONE fighter per event; you cannot reuse that fighter again during the season window.
-- Season window: 6 months; defined in admin config and shown in UI.
-- Scoring uses the same per-fight rules as weekly.
-- Leaderboard aggregates each user’s event totals across the season window.
-- Tie-breakers (season): highest single-event score, then earliest total reached (by submission timestamp).
-
-### Scoring Application Order
-Per fighter:
-1) Base + Method + Round + Performance + Bonuses + Penalties
-2) Apply per-fighter multipliers (Underdog)
-3) If Captain: apply 1.5x to that fighter’s total
-
-Team-level:
-4) Sum all fighters’ totals
-5) If event.type === 'PPV': apply 1.5x event multiplier
-
-Notes:
-- Title-fight bonus (+5) remains unchanged.
-- If odds are missing, underdog multiplier is skipped.
-- All multipliers are multiplicative; no stacking caps in v1.
-
-### Tie-breakers (Event)
-- Primary: earliest team submission time
-- Secondary: highest-scoring fighter in the team
-- Tertiary: most correct winner picks within the lineup
-
-### Compliance with Existing Scope
-- No schema breaking changes. Captain is already supported (`is_captain`).
-- PPV status uses `event.type` and is computed in the scoring engine.
-- One-and-Done uses a league with `team_size = 1`; enforcement uses past usage checks in the season window. 

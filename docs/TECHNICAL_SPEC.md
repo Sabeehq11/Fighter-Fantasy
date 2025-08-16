@@ -186,6 +186,13 @@ interface Fight {
     method: FightMethod;
     round: number;
     time_seconds: number;         // Time in the round
+    technique?: string;           // e.g., "Rear-Naked Choke", "Spinning wheel-kick KO"
+    narrative_tags?: string[];    // e.g., ["knockdown", "rnc_chain"]
+
+    // Closing Odds Snapshot (for multipliers)
+    closing_odds?: {
+      [fighter_id: string]: number; // e.g., { fighter_a_id: -150, fighter_b_id: +130 }
+    };
     
     // Performance Stats
     stats: {
@@ -304,7 +311,7 @@ interface User {
   
   // Fantasy Stats
   fantasy_stats: {
-    total_teams_created: number;
+    total_entries_created: number;
     total_points_earned: number;
     best_finish: number;           // Best leaderboard position
     average_points: number;
@@ -330,33 +337,33 @@ interface User {
 interface FantasyLeague {
   id: string;
   name: string;
-  type: 'global' | 'private';
+  type: 'global' | 'public' | 'private';
   event_id: string;               // Which event this is for
 
   // Format/Mode
-  mode: 'salary_cap_weekly' | 'one_and_done';
+  mode: 'main_card_prediction';
 
   // Rules
   settings: {
-    budget: number;               // Total salary cap
-    team_size: number;            // Number of fighters (weekly=5, one_and_done=1)
-    max_from_same_fight: number;  // Usually 1
-    lock_time_minutes_before: number; // Usually 15
-    allow_captain: boolean;       // Weekly format: true (global)
-    captain_multiplier: number;   // e.g., 1.5
-    apply_ppv_multiplier: boolean; // If true, use event.type === 'PPV' multiplier
-    ppv_multiplier: number;       // e.g., 1.5
+    lock_policy: 'main_card_minus_15m';
+    allow_captain: boolean;       // true
+    captain_multiplier: number;   // 1.25
+    show_lineups_after: 'lock' | 'first_fight';
+    season_aggregation?: {
+      enabled: boolean;
+      best_n?: number;            // e.g., 8
+    };
   };
 
   // Scoring System
-  scoring_system: 'standard' | 'custom';
-  custom_scoring?: ScoringRules;
+  scoring: ScoringRules;
+
+  // Access
+  join_code?: string;             // for private leagues
 
   // Participants
   total_entries: number;
   max_entries?: number;
-  entry_fee?: number;
-  prize_pool?: number;
 
   // Status
   status: 'open' | 'locked' | 'scoring' | 'completed';
@@ -366,24 +373,21 @@ interface FantasyLeague {
   created_by?: string;            // User ID for private leagues
 }
 
-interface FantasyTeam {
-  id: string;                     // "team_userid_eventid"
+interface FantasyEntry {
+  id: string;                     // "entry_userid_eventid"
   user_id: string;
   league_id: string;
   event_id: string;
 
-  // Denormalized for querying/season overlays
-  mode: 'salary_cap_weekly' | 'one_and_done';
-  event_date_utc: string;         // ISO date copied from Event for season range filters
+  // Composition
+  picks: FantasyPick[];           // One per main-card fight
+  captain_fighter_id?: string;    // Optional
 
-  // Team Composition
-  name?: string;                  // Optional team name
-  picks: FantasyPick[];
-  total_salary_used: number;
-
-  // Status
+  // Locking
   is_locked: boolean;
   locked_at?: Timestamp;
+  edit_count: number;             // For tie-breakers
+  submitted_at: Timestamp;        // First submission timestamp
 
   // Scoring
   total_points: number;
@@ -396,66 +400,80 @@ interface FantasyTeam {
 }
 
 interface FantasyPick {
-  fighter_id: string;
-  salary: number;
-  slot: number;                   // Position 1-5
-  is_captain?: boolean;           // For 2x points modes
+  fight_id: string;
+  selected_fighter_id: string;
+  prediction: {
+    method: 'KO/TKO' | 'Submission' | 'Decision' | 'DQ' | 'Draw';
+    round: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'GTD';
+  };
+  free_text?: string;
+  is_captain?: boolean;
+  coins?: {
+    stake: number;               // 0 allowed
+    bet_type: 'winner' | 'winner_method' | 'winner_method_round';
+  };
   points_earned?: number;         // After scoring
 }
 
-interface FantasySalary {
-  id: string;                     // "salary_eventid_fighterid"
-  event_id: string;
-  fighter_id: string;
-  salary: number;
-  
-  // Factors used to calculate
-  factors: {
-    ranking_score: number;
-    odds_score: number;
-    recent_form_score: number;
-    popularity_score: number;
-  };
-  
-  ownership_percentage?: number;   // After lock
-}
-
 interface ScoringRules {
-  // Base Points
-  participation: number;
-  win: number;
-  loss: number;
-  
-  // Method Bonuses
-  ko_tko_bonus: number;
-  submission_bonus: number;
-  decision_bonus: number;
-  
-  // Round Bonuses (for finishes)
-  round_bonuses: {
-    [round: number]: number;
+  // Base Prediction
+  prediction: {
+    winner: number;               // 10
+    method: number;               // 5
+    round: number;                // 3
+    close_round: number;          // 1
+    decision_gtd: number;         // 3
   };
-  
-  // Performance Points
-  knockdown: number;
-  sig_strike: number;
-  sig_strike_cap?: number;
-  takedown: number;
-  control_time_per_minute: number;
-  submission_attempt: number;
-  sub_attempt_cap?: number;
-  
-  // Context Bonuses
-  title_fight_win_bonus: number;
-  underdog_multipliers: {
-    threshold: number;            // e.g., +200
-    multiplier: number;           // e.g., 1.2
-  }[];
-  
-  // Penalties
-  missed_weight_penalty: number;
-  point_deduction_penalty: number;
-  dq_loss_penalty: number;
+
+  // Performance Overlay
+  performance: {
+    weights: {
+      knockdown: number;          // 2
+      sig_strike: number;         // 0.05
+      takedown: number;           // 1
+      control_minute: number;     // 1
+      submission_attempt: number; // 1
+      reversal: number;           // 1
+    };
+    subcaps: {
+      knockdown: number;          // 4
+      sig_strike: number;         // 3
+      takedown: number;           // 3
+      control: number;            // 3
+      submission_attempt: number; // 3
+      reversal: number;           // 2
+    };
+    fight_caps: { three_round: number; five_round: number }; // 8 / 10
+    lose_multiplier: number;      // 0.5
+  };
+
+  // Early Finish Boost
+  early_finish: { R1: number; R2: number; R3: number; championship_R4_R5: number };
+
+  // Rarity Multipliers
+  rarity_multipliers: { S: number; A: number; B: number; Decision: number };
+
+  // Underdog Bands (win-only)
+  underdog_bands: Array<{ min_plus: number; max_plus: number | null; multiplier: number }>;
+
+  // Context & Penalties
+  context: {
+    title_fight_win: number;
+    short_notice_win: number;
+    missed_weight: number;
+    dq_loss: number;
+    no_contest_participation: number;
+  };
+
+  // Captain
+  captain_multiplier: number; // 1.25
+
+  // Coins payouts (v1 fixed tiers)
+  coins_payouts: {
+    winner: number;                // e.g., 1.6
+    winner_method: number;         // e.g., 3.0
+    winner_method_round: number;   // e.g., 6.0
+  };
 }
 
 interface FantasyScoreEvent {
@@ -463,23 +481,23 @@ interface FantasyScoreEvent {
   event_id: string;
   fight_id: string;
   fighter_id: string;
-  
+
   // Raw Stats (from Fight result)
   stats: FightStats;
-  
+
   // Calculated Points
   points_breakdown: {
     base: number;
-    method_bonus: number;
-    round_bonus: number;
     performance: number;
-    bonuses: number;
-    penalties: number;
-    multipliers: number;
+    early_finish: number;
+    context: number;
+    rarity_multiplier: number;
+    underdog_multiplier: number;
+    captain_multiplier: number;
   };
-  
+
   total_points: number;
-  
+
   // Metadata
   calculated_at: Timestamp;
 }
@@ -514,9 +532,8 @@ interface DataService {
   
   // Fantasy
   getFantasyLeague(leagueId: string): Promise<FantasyLeague>;
-  getUserTeams(userId: string, eventId?: string): Promise<FantasyTeam[]>;
-  getEventSalaries(eventId: string): Promise<FantasySalary[]>;
-  getLeaderboard(leagueId: string): Promise<FantasyTeam[]>;
+  getUserEntries(userId: string, eventId?: string): Promise<FantasyEntry[]>;
+  getLeaderboard(leagueId: string): Promise<FantasyEntry[]>;
 }
 
 interface FighterFilters {
@@ -535,7 +552,7 @@ interface FighterFilters {
 firestore/
 ├── fighters/
 │   └── {fighter_id}/
-│       └── fights/           # Subcollection of fighter's fights
+│       └── fights/
 ├── events/
 │   └── {event_id}/
 ├── fights/
@@ -550,17 +567,16 @@ firestore/
 ├── fantasy/
 │   ├── leagues/
 │   │   └── {league_id}/
-│   ├── teams/
-│   │   └── {team_id}/
-│   ├── salaries/
+│   ├── entries/
+│   │   └── {entry_id}/
+│   ├── scores/
 │   │   └── {event_id}/
 │   │       └── {fighter_id}/
-│   └── scores/
-│       └── {event_id}/
-│           └── {fighter_id}/
+│   └── config/
+│       └── scoring_rules (singleton or per-league)
 └── admin/
-    ├── scraped_data/         # Temporary storage for scraped JSON
-    └── config/               # App configuration
+    ├── scraped_data/
+    └── config/
 ```
 
 ## Authentication & Authorization
@@ -568,10 +584,10 @@ firestore/
 ### User Roles
 ```typescript
 enum UserRole {
-  GUEST = 'guest',           // Not logged in
-  USER = 'user',            // Standard user
-  PREMIUM = 'premium',      // Paid subscription
-  ADMIN = 'admin'           // Full access
+  GUEST = 'guest',
+  USER = 'user',
+  PREMIUM = 'premium',
+  ADMIN = 'admin'
 }
 
 interface AuthContext {
@@ -641,17 +657,15 @@ interface AppState {
   
   // Fantasy State
   fantasy: {
-    activeTeam: FantasyTeam | null;
+    activeEntry: FantasyEntry | null;
     draftPicks: FantasyPick[];
-    remainingBudget: number;
     currentEvent: Event | null;
-    salaries: FantasySalary[];
   };
   
   // User State
   user: {
     profile: User | null;
-    teams: FantasyTeam[];
+    entries: FantasyEntry[];
     notifications: Notification[];
   };
 }
@@ -710,8 +724,9 @@ Required Firestore Indexes:
 2. fighters: division ASC, ranking ASC
 3. fighters: isActive ASC, name ASC
 4. fights: event_id ASC, bout_order ASC
-5. fantasy/teams: event_id ASC, total_points DESC
-6. fantasy/teams: user_id ASC, created_at DESC
+5. fantasy/entries: event_id ASC, total_points DESC
+6. fantasy/entries: user_id ASC, created_at DESC
+7. fantasy/entries: league_id ASC, is_locked ASC, submitted_at ASC
 ```
 
 ## Security Considerations
@@ -745,13 +760,20 @@ const FighterSchema = z.object({
   division: z.enum([...weightDivisions]),
   height_inches: z.number().min(60).max(84),
   reach_inches: z.number().min(60).max(90),
-  // ... etc
 });
 
-const FantasyTeamSchema = z.object({
-  picks: z.array(FantasyPickSchema).length(5),
-  total_salary_used: z.number().max(10000),
-  // ... etc
+const FantasyEntrySchema = z.object({
+  picks: z.array(z.object({
+    fight_id: z.string(),
+    selected_fighter_id: z.string(),
+    prediction: z.object({
+      method: z.enum(['KO/TKO', 'Submission', 'Decision', 'DQ', 'Draw']),
+      round: z.enum(['R1', 'R2', 'R3', 'R4', 'R5', 'GTD']),
+    }),
+    free_text: z.string().optional(),
+    is_captain: z.boolean().optional(),
+    coins: z.object({ stake: z.number().min(0), bet_type: z.enum(['winner', 'winner_method', 'winner_method_round']) }).optional(),
+  })).min(1),
 });
 ```
 
@@ -805,7 +827,6 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to error reporting service
     console.error(error);
   }, [error]);
 
@@ -823,17 +844,17 @@ export default function ErrorBoundary({
 ### Unit Tests
 ```typescript
 // __tests__/scoring.test.ts
-describe('Fantasy Scoring Engine', () => {
-  it('calculates base points correctly', () => {
-    const stats = fixtureFightStats;
-    const points = calculatePoints(stats, scoringRules);
-    expect(points.base).toBe(12); // 2 participation + 10 win
+describe('Fantasy Scoring Engine (Prediction Mode)', () => {
+  it('awards prediction base points correctly', () => {
+    // ...
   });
-  
-  it('applies underdog multiplier', () => {
-    const stats = { ...fixtureFightStats, odds: 250 };
-    const points = calculatePoints(stats, scoringRules);
-    expect(points.total).toBe(basePoints * 1.2);
+
+  it('applies performance overlay with caps', () => {
+    // ...
+  });
+
+  it('applies rarity and underdog multipliers in the right order', () => {
+    // ...
   });
 });
 ```
@@ -845,10 +866,8 @@ describe('Events API', () => {
   it('returns upcoming events sorted by date', async () => {
     const response = await fetch('/api/events/upcoming');
     const events = await response.json();
-    
     expect(response.status).toBe(200);
-    expect(events).toHaveLength(10);
-    expect(events[0].date_utc < events[1].date_utc).toBe(true);
+    expect(events.length).toBeGreaterThan(0);
   });
 });
 ```
@@ -856,22 +875,9 @@ describe('Events API', () => {
 ### E2E Tests
 ```typescript
 // cypress/e2e/fantasy-flow.cy.ts
-describe('Fantasy Team Creation', () => {
-  it('creates a valid team within budget', () => {
-    cy.login('test@example.com', 'password');
-    cy.visit('/fantasy');
-    cy.contains('Create Team').click();
-    
-    // Select 5 fighters
-    cy.get('[data-testid="fighter-card"]').first(5).click();
-    
-    // Verify budget
-    cy.get('[data-testid="remaining-budget"]')
-      .should('be.gte', 0);
-    
-    // Save team
-    cy.contains('Save Team').click();
-    cy.url().should('include', '/fantasy/my-teams');
+describe('Fantasy Contest Entry', () => {
+  it('submits valid picks for all main-card fights', () => {
+    // ...
   });
 });
 ```
@@ -889,9 +895,6 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxx
 NEXT_PUBLIC_FIREBASE_APP_ID=xxx
 
 FIREBASE_ADMIN_SDK_JSON=xxx
-STRIPE_SECRET_KEY=xxx
-STRIPE_WEBHOOK_SECRET=xxx
-
 FIRECRAWL_API_KEY=xxx
 SCRAPER_CRON_SECRET=xxx
 ```
@@ -906,23 +909,12 @@ SCRAPER_CRON_SECRET=xxx
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
-  "env": {
-    "NODE_ENV": "production"
-  },
+  "env": {"NODE_ENV": "production"},
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
-    }
+    {"source": "/(.*)", "headers": [
+      {"key": "X-Content-Type-Options", "value": "nosniff"},
+      {"key": "X-Frame-Options", "value": "DENY"}
+    ]}
   ]
 }
 ```
@@ -946,46 +938,55 @@ service cloud.firestore {
 
     // Fantasy collections
     match /fantasy/leagues/{leagueId} { allow read: if true; }
-    match /fantasy/teams/{teamId} {
+    match /fantasy/entries/{entryId} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
-      allow update: if request.auth != null &&
-        request.auth.uid == resource.data.user_id &&
-        resource.data.is_locked == false;
+      allow update: if request.auth != null && request.auth.uid == resource.data.user_id && resource.data.is_locked == false;
     }
-    match /fantasy/salaries/{eventId}/{fighterId} { allow read: if true; }
     match /fantasy/scores/{eventId}/{fighterId} { allow read: if true; }
 
     // Admin only
     match /admin/{document=**} {
-      allow read, write: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true;
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true;
     }
   }
 }
-``` 
+```
 
-## Admin Config: Fantasy Season
+## Admin Config: Scoring Rules
 ```typescript
-// firestore: admin/config/fantasy_season
-interface FantasySeasonConfig {
-  id: 'current';
-  name: string;                   // e.g., "2025 Season A"
-  start_date_utc: string;         // ISO date (6-month window)
-  end_date_utc: string;           // ISO date
-  mode: 'one_and_done';
-}
+// firestore: fantasy/config/scoring_rules (or per-league document)
+const DefaultScoringRules: ScoringRules = {
+  prediction: { winner: 10, method: 5, round: 3, close_round: 1, decision_gtd: 3 },
+  performance: {
+    weights: { knockdown: 2, sig_strike: 0.05, takedown: 1, control_minute: 1, submission_attempt: 1, reversal: 1 },
+    subcaps: { knockdown: 4, sig_strike: 3, takedown: 3, control: 3, submission_attempt: 3, reversal: 2 },
+    fight_caps: { three_round: 8, five_round: 10 },
+    lose_multiplier: 0.5,
+  },
+  early_finish: { R1: 5, R2: 3, R3: 1, championship_R4_R5: 1 },
+  rarity_multipliers: { S: 1.3, A: 1.15, B: 1.05, Decision: 1.0 },
+  underdog_bands: [
+    { min_plus: 100, max_plus: 199, multiplier: 1.1 },
+    { min_plus: 200, max_plus: 399, multiplier: 1.2 },
+    { min_plus: 400, max_plus: null, multiplier: 1.35 },
+  ],
+  context: { title_fight_win: 2, short_notice_win: 2, missed_weight: -2, dq_loss: -5, no_contest_participation: 1 },
+  captain_multiplier: 1.25,
+  coins_payouts: { winner: 1.6, winner_method: 3.0, winner_method_round: 6.0 },
+};
 ```
 
 ## Scoring Application Order
-- Per fighter: base + method + round + performance + bonuses + penalties → underdog multiplier → captain multiplier (if applicable)
-- Team total: sum fighters → PPV event multiplier (if enabled)
+- Per pick: base prediction → performance overlay → early finish → context/penalties → rarity multiplier → underdog multiplier (win only) → captain multiplier
+- Entry total: sum picks
 
 ## Additional Indexes
 ```
-7. fantasy/teams: mode ASC, event_date_utc DESC, user_id ASC
+8. fantasy/entries: league_id ASC, is_locked ASC, edit_count ASC, submitted_at ASC
 ```
 
 Notes:
-- `event_date_utc` and `mode` are denormalized to support season queries and enforcement without cross-collection joins.
-- `apply_ppv_multiplier` uses `event.type` to decide runtime multiplier. 
+- Odds optional; skip underdog multiplier if missing.
+- Technique tier mapping is admin-configurable; unknown finishes default to Tier B; decisions to ×1.00.
+- Season aggregation is an optional overlay (best N events). 

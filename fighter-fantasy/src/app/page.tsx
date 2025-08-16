@@ -75,11 +75,16 @@ export default function Home() {
         {/* Subtle dark overlay - lighter at the bottom for better pattern visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/30 z-10" />
         
-        {/* Diagonal pattern container */}
+        {/* Diagonal pattern container - Made larger to ensure full coverage */}
         <div 
-          className="absolute inset-0 opacity-[0.35]"
+          className="absolute opacity-[0.35]"
           style={{
-            transform: 'rotate(-30deg) scale(2.2)',
+            // Make container much larger than viewport to ensure coverage when rotated
+            top: '-50%',
+            left: '-50%',
+            width: '200%',
+            height: '200%',
+            transform: 'rotate(-30deg)',
             transformOrigin: 'center',
           }}
         >
@@ -87,20 +92,20 @@ export default function Home() {
             className="w-full h-full"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, 60px)',
-              gridTemplateRows: 'repeat(auto-fill, 60px)',
-              gap: '8px',
+              gridTemplateColumns: 'repeat(auto-fill, 80px)',
+              gridTemplateRows: 'repeat(auto-fill, 80px)',
+              gap: '10px',
             }}
           >
-            {/* Generate pattern grid - increased to 300 for complete corner coverage */}
-            {Array.from({ length: 300 }).map((_, index) => (
-              <div key={index} className="relative w-[60px] h-[60px] flex items-center justify-center">
+            {/* Generate pattern grid - increased to 5000 for complete coverage on all screens including ultra-wide monitors */}
+            {Array.from({ length: 5000 }).map((_, index) => (
+              <div key={index} className="relative w-[80px] h-[80px] flex items-center justify-center">
                 {index % 2 === 0 ? (
                   <Image
                     src="/Photos/Logos/UFC.png"
                     alt=""
-                    width={40}
-                    height={40}
+                    width={55}
+                    height={55}
                     className="object-contain"
                     style={{
                       filter: 'brightness(2.5) contrast(1.5) invert(1) sepia(1) saturate(2.5) hue-rotate(80deg) drop-shadow(0 0 10px rgba(74, 222, 128, 0.8))',
@@ -110,8 +115,8 @@ export default function Home() {
                   <Image
                     src="/Photos/Logos/Venom.png"
                     alt=""
-                    width={40}
-                    height={40}
+                    width={55}
+                    height={55}
                     className="object-contain"
                     style={{
                       filter: 'brightness(2.5) contrast(1.5) invert(1) sepia(1) saturate(2.5) hue-rotate(80deg) drop-shadow(0 0 10px rgba(74, 222, 128, 0.8))',

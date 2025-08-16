@@ -113,10 +113,9 @@ App
 │   │
 │   └── TeamBuilder
 │       ├── EventSelector
-│       ├── BudgetTracker
-│       ├── FighterSelector
-│       ├── TeamRoster
-│       └── SaveControls
+│       ├── PicksList
+│       ├── CaptainSelector
+│       └── SubmitControls
 │
 └── SharedComponents
     ├── Card
@@ -316,45 +315,28 @@ App
 </div>
 ```
 
-### 4. Fantasy Team Builder Layout
+### 4. Fantasy Team Builder (Prediction Mode)
 ```tsx
 // components/pages/TeamBuilder.tsx
 <div className="min-h-screen bg-bg-primary">
   <div className="container mx-auto px-4 py-8">
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Fighter Selection (Left - 2 cols) */}
+      {/* Picks (Left - 2 cols) */}
       <div className="lg:col-span-2 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Select Your Fighters</CardTitle>
-            <CardDescription>Choose 5 fighters for UFC {event.number}</CardDescription>
+            <CardTitle>Make Your Picks</CardTitle>
+            <CardDescription>One pick per main-card fight</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Filters */}
-            <div className="flex gap-4 mb-6">
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Fights" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Fights</SelectItem>
-                  <SelectItem value="main">Main Card</SelectItem>
-                  <SelectItem value="prelims">Prelims</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input placeholder="Search fighters..." />
-            </div>
-
-            {/* Fighter List */}
-            <div className="space-y-2">
-              {availableFighters.map(fighter => (
-                <FighterSelectionCard
-                  key={fighter.id}
-                  fighter={fighter}
-                  salary={salaries[fighter.id]}
-                  onSelect={handleSelect}
-                  isSelected={isSelected(fighter.id)}
-                  isDisabled={isDisabled(fighter.id)}
+            <div className="space-y-4">
+              {mainCardFights.map((fight) => (
+                <PickRow
+                  key={fight.id}
+                  fight={fight}
+                  odds={fight.odds}
+                  selected={getPickForFight(fight.id)}
+                  onChange={(pick) => updatePick(fight.id, pick)}
                 />
               ))}
             </div>
@@ -362,74 +344,44 @@ App
         </Card>
       </div>
 
-      {/* Team Roster (Right - 1 col) */}
+      {/* Right rail */}
       <div className="space-y-6">
-        {/* Budget Tracker */}
+        {/* Captain Selector */}
         <Card>
           <CardHeader>
-            <CardTitle>Budget</CardTitle>
+            <CardTitle>Captain</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between text-lg">
-                <span>Remaining</span>
-                <span className={remainingBudget < 0 ? 'text-red-500' : 'text-green-500'}>
-                  ${remainingBudget.toLocaleString()}
-                </span>
-              </div>
-              <Progress value={(10000 - remainingBudget) / 100} />
-              <div className="text-sm text-muted">
-                ${usedBudget.toLocaleString()} of $10,000 used
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Selected Team */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Team ({selectedFighters.length}/5)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5].map(slot => {
-                const fighter = selectedFighters[slot - 1];
-                return (
-                  <TeamSlot
-                    key={slot}
-                    slot={slot}
-                    fighter={fighter}
-                    onRemove={handleRemove}
-                  />
-                );
-              })}
-            </div>
-
-            <div className="mt-6 space-y-3">
-              <Button 
-                className="w-full" 
-                disabled={selectedFighters.length !== 5 || remainingBudget < 0}
-              >
-                Save Team
-              </Button>
-              <Button variant="outline" className="w-full">
-                Clear All
-              </Button>
-            </div>
+            <CaptainSelector
+              fights={mainCardFights}
+              value={captainFighterId}
+              onChange={setCaptainFighterId}
+              multiplier={1.25}
+            />
           </CardContent>
         </Card>
 
         {/* Lock Timer */}
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Team Lock Time</AlertTitle>
+          <AlertTitle>Contest Lock</AlertTitle>
           <AlertDescription>
-            Teams lock 15 minutes before the first fight
+            Picks lock 15 minutes before the main card
             <div className="mt-2 font-mono text-lg">
-              <Countdown to={lockTime} />
+              <Countdown to={mainCardLockTime} />
             </div>
           </AlertDescription>
         </Alert>
+
+        {/* Submit Controls */}
+        <div className="space-y-3">
+          <Button className="w-full" disabled={!isComplete}>
+            Submit Picks
+          </Button>
+          <Button variant="outline" className="w-full" onClick={clearAll}>
+            Clear All
+          </Button>
+        </div>
       </div>
     </div>
   </div>
@@ -652,46 +604,91 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
 }
 ```
 
-### 5. BudgetTracker Component
+### 5. PicksCompletion Component
 ```tsx
-interface BudgetTrackerProps {
-  used: number;
+interface PicksCompletionProps {
+  completed: number;
   total: number;
 }
 
-export function BudgetTracker({ used, total }: BudgetTrackerProps) {
-  const remaining = total - used;
-  const percentage = (used / total) * 100;
+export function PicksCompletion({ completed, total }: PicksCompletionProps) {
+  const percentage = (completed / total) * 100;
   
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Budget</span>
-        <span className={cn(
-          "text-lg font-bold",
-          remaining < 0 ? "text-red-500" : "text-green-500"
-        )}>
-          ${remaining.toLocaleString()}
+        <span className="text-sm font-medium">Picks</span>
+        <span className="text-lg font-bold">
+          {completed}/{total}
         </span>
       </div>
       
       <div className="relative h-3 bg-bg-tertiary rounded-full overflow-hidden">
         <div 
-          className={cn(
-            "absolute inset-y-0 left-0 transition-all",
-            percentage > 100 ? "bg-red-500" : percentage > 80 ? "bg-yellow-500" : "bg-green-500"
-          )}
+          className="absolute inset-y-0 left-0 transition-all bg-accent-red"
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>
       
       <div className="flex justify-between text-xs text-muted">
-        <span>${used.toLocaleString()} used</span>
-        <span>${total.toLocaleString()} total</span>
+        <span>{completed} selected</span>
+        <span>{total} required</span>
       </div>
     </div>
   );
 }
+```
+
+### PickRow Component
+```tsx
+interface PickRowProps {
+  fight: Fight;
+  odds?: { fighter_a: number; fighter_b: number };
+  selected?: FantasyPick;
+  onChange: (pick: FantasyPick) => void;
+}
+
+export function PickRow({ fight, odds, selected, onChange }: PickRowProps) {
+  return (
+    <div className="p-4 border rounded-lg space-y-3">
+      <FightMatchup fight={fight} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <SelectFighter fight={fight} value={selected?.selected_fighter_id} onChange={(v) => onChange({ ...selected, selected_fighter_id: v } as FantasyPick)} />
+        <SelectMethod value={selected?.prediction.method} onChange={(v) => onChange({ ...selected, prediction: { ...selected?.prediction, method: v } } as FantasyPick)} />
+        <SelectRound value={selected?.prediction.round} onChange={(v) => onChange({ ...selected, prediction: { ...selected?.prediction, round: v } } as FantasyPick)} />
+      </div>
+      <Input placeholder="Free-text prediction (optional)" value={selected?.free_text || ''} onChange={e => onChange({ ...selected, free_text: e.target.value } as FantasyPick)} />
+      {odds && <div className="text-xs text-muted">Odds snapshot: {odds.fighter_a} / {odds.fighter_b}</div>}
+    </div>
+  );
+}
+```
+
+### Captain Toggle
+```tsx
+<Button
+  variant={isCaptain ? 'champion' : 'outline'}
+  onClick={() => onToggleCaptain(fighter.id)}
+  disabled={isCaptain ? false : hasCaptainAlready}
+>
+  {isCaptain ? 'Captain (×1.25)' : 'Set Captain'}
+</Button>
+```
+
+### Leaderboard Row: Accuracy Card
+```tsx
+<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="outline" size="sm">View Breakdown</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Prediction Accuracy</DialogTitle>
+      <DialogDescription>How your points were calculated</DialogDescription>
+    </DialogHeader>
+    <AccuracyBreakdown pick={pick} fight={fight} rules={rules} />
+  </DialogContent>
+</Dialog>
 ```
 
 ## Responsive Breakpoints
@@ -842,63 +839,7 @@ export function MobileNav() {
 }
 ``` 
 
-## Fantasy UI Additions
-
-### Captain Toggle (Weekly)
-```tsx
-// In FighterSelectionCard or TeamSlot
-<Button
-  variant={isCaptain ? 'champion' : 'outline'}
-  onClick={() => onToggleCaptain(fighter.id)}
-  disabled={isCaptain ? false : hasCaptainAlready}
->
-  {isCaptain ? 'Captain (1.5x)' : 'Set Captain'}
-</Button>
-```
-
-Rules:
-- Exactly one Captain per team when `allow_captain` is true.
-- Visual badge on the Captain in roster and scoreboard.
-
-### One-and-Done Pick UI
-```tsx
-// Simple single-pick UI for season overlay
-<div className="space-y-4">
-  <DivisionFilter />
-  <FighterSearch />
-  <FighterGrid onPick={(fighter) => setPick(fighter)} />
-  <Button disabled={!pick} onClick={saveOneAndDone}>Submit Pick</Button>
-  <p className="text-xs text-muted">You cannot pick this fighter again this season.</p>
-</div>
-```
-
-### Season Leaderboard
-```tsx
-// /fantasy/season
-<Table>
-  <TableHeader>
-    <TableRow>
-      <TableHead>Rank</TableHead>
-      <TableHead>User</TableHead>
-      <TableHead>Events Played</TableHead>
-      <TableHead>Total Points</TableHead>
-      <TableHead>Best Event</TableHead>
-    </TableRow>
-  </TableHeader>
-  <TableBody>
-    {rows.map(r => (
-      <TableRow key={r.userId}>
-        <TableCell>{r.rank}</TableCell>
-        <TableCell><UserCell userId={r.userId} /></TableCell>
-        <TableCell>{r.eventsPlayed}</TableCell>
-        <TableCell>{r.totalPoints}</TableCell>
-        <TableCell>{r.bestEvent.points} (UFC {r.bestEvent.name})</TableCell>
-      </TableRow>
-    ))}
-  </TableBody>
-</Table>
-```
-
 Notes:
-- Surface season name and dates from `admin/config/fantasy_season`.
-- Link each row to the user’s season page with per-event picks. 
+- Picks lock 15 minutes before the main card.
+- Captain applies ×1.25 only to the selected fighter’s final total.
+- Accuracy Card should show prediction base, performance, early finish, context, rarity, underdog, and captain multipliers in order. 

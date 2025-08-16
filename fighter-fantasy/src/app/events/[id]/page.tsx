@@ -44,13 +44,39 @@ export default function EventDetailPage() {
       // Load fights
       const fightsData = await getFightsByEvent(eventId);
       
+      // Filter out corrupted/bad data first
+      const badPatterns = [
+        'round', 'time', 'method', 'prelims', 'early', 'main card',
+        'previous', 'canelo', 'crawford', 'september', 'august', 'chicago',
+        'on august', 'in chicago', 'on august', 'in chicago', '\n'
+      ];
+      
+      const validFights = fightsData.filter((fight: any) => {
+        const fighterA = (fight.fighter_a_name || '').toLowerCase();
+        const fighterB = (fight.fighter_b_name || '').toLowerCase();
+        
+        // Check if fighter names contain bad patterns
+        const hasBadData = badPatterns.some(pattern => 
+          fighterA.includes(pattern) || fighterB.includes(pattern)
+        );
+        
+        // Also check if fighter names are missing or too short
+        const hasValidNames = 
+          fight.fighter_a_name && fight.fighter_b_name &&
+          fight.fighter_a_name.length > 2 && fight.fighter_b_name.length > 2;
+        
+        return !hasBadData && hasValidNames;
+      });
+      
+      console.log(`Filtered fights: ${fightsData.length} -> ${validFights.length} valid fights`);
+      
       // Load all fighters to try matching by name or ID
       const allFighters = await getFighters();
       const fighterMapById = new Map(allFighters.map(f => [f.id, f]));
       const fighterMapByName = new Map(allFighters.map(f => [f.name.toLowerCase(), f]));
 
-      // Map fighters to fights, handling both ID-based and name-based data
-      const fightsWithFighters: FightWithFighters[] = fightsData.map((fight: any) => {
+      // Map fighters to fights first, handling both ID-based and name-based data
+      const fightsWithFighterData: FightWithFighters[] = validFights.map((fight: any) => {
         let fighterA: Fighter | undefined;
         let fighterB: Fighter | undefined;
         
@@ -79,6 +105,42 @@ export default function EventDetailPage() {
           fighter_b_name: fight.fighter_b_name
         };
       });
+
+      // Now deduplicate based on actual fighter names
+      const uniqueFights = new Map<string, FightWithFighters>();
+      
+      fightsWithFighterData.forEach((fight) => {
+        // Get fighter names - either from Fighter objects or from scraped names
+        const fighterAName = (fight.fighterA?.name || fight.fighter_a_name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        const fighterBName = (fight.fighterB?.name || fight.fighter_b_name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        
+        // Skip if no fighter names
+        if (!fighterAName || !fighterBName) {
+          console.log('Skipping fight with missing names:', fight.id);
+          return;
+        }
+        
+        // Create unique key with sorted fighter names
+        const fighterNames = [fighterAName, fighterBName].sort();
+        const fightKey = fighterNames.join('_vs_');
+        
+        // Only keep the first occurrence or the one with better data
+        if (!uniqueFights.has(fightKey)) {
+          uniqueFights.set(fightKey, fight);
+        } else {
+          const existing = uniqueFights.get(fightKey)!;
+          // Keep the one with higher bout order or main event status
+          const existingScore = (existing.is_main_event ? 1000 : 0) + (existing.bout_order || 0) * 10 + (existing.is_title_fight ? 100 : 0);
+          const currentScore = (fight.is_main_event ? 1000 : 0) + (fight.bout_order || 0) * 10 + (fight.is_title_fight ? 100 : 0);
+          
+          if (currentScore > existingScore) {
+            uniqueFights.set(fightKey, fight);
+          }
+        }
+      });
+      
+      const fightsWithFighters = Array.from(uniqueFights.values());
+      console.log(`Deduplication: ${fightsWithFighterData.length} fights -> ${fightsWithFighters.length} unique fights`);
 
       // Sort fights by bout order
       fightsWithFighters.sort((a, b) => (b.bout_order || 0) - (a.bout_order || 0));

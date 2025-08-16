@@ -4,10 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { FantasyTeam, Event, Fighter, League } from '@/types';
+import { FantasyTeam, Event, Fighter, League, Fight } from '@/types';
 import { getUserTeams, deleteTeam, getLeague } from '@/services/fantasyService';
-import { getEvents, getFighters } from '@/services/dataService';
+import { getEvents, getFighters, getFightsByEvent } from '@/services/dataService';
 import { format, differenceInSeconds } from 'date-fns';
+import type { PredictionEntry, PredictionLeague } from '@/types/prediction';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
+import { getPredictionLeague } from '@/services/predictionService';
 
 interface TeamWithDetails extends FantasyTeam {
   event?: Event;
@@ -18,13 +22,25 @@ interface TeamWithDetails extends FantasyTeam {
   timeUntilLock?: string;
 }
 
+interface PredictionEntryWithDetails extends PredictionEntry {
+  event?: Event;
+  league?: PredictionLeague | null;
+  fights?: Fight[];
+  fighterDetails?: Map<string, Fighter>;
+  lockTime?: Date;
+  isLocked?: boolean;
+  timeUntilLock?: string;
+}
+
 export default function MyTeamsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [teams, setTeams] = useState<TeamWithDetails[]>([]);
+  const [predictionEntries, setPredictionEntries] = useState<PredictionEntryWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'draft' | 'submitted' | 'scored'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'salary' | 'prediction'>('all');
 
   useEffect(() => {
     if (!user) {
@@ -40,8 +56,11 @@ export default function MyTeamsPage() {
     try {
       setLoading(true);
       
-      // Load user teams
-      const userTeams = await getUserTeams(user.uid);
+      // Load both legacy teams and prediction entries in parallel
+      const [userTeams, predictionEntriesData] = await Promise.all([
+        getUserTeams(user.uid),
+        loadPredictionEntries(user.uid)
+      ]);
       
       // Load all events and fighters for reference
       const [events, fighters] = await Promise.all([
@@ -52,7 +71,7 @@ export default function MyTeamsPage() {
       const eventMap = new Map(events.map(e => [e.id, e]));
       const fighterMap = new Map(fighters.map(f => [f.id, f]));
       
-      // Enrich teams with event and fighter details
+      // Enrich legacy teams with event and fighter details
       const enrichedTeams: TeamWithDetails[] = await Promise.all(
         userTeams.map(async (team) => {
           const league = team.league_id ? await getLeague(team.league_id) : null;
@@ -87,6 +106,44 @@ export default function MyTeamsPage() {
         })
       );
       
+      // Enrich prediction entries with details
+      const enrichedPredictions: PredictionEntryWithDetails[] = await Promise.all(
+        predictionEntriesData.map(async (entry) => {
+          const event = eventMap.get(entry.event_id);
+          const league = entry.league_id ? await getPredictionLeague(entry.league_id) : null;
+          const fights = event ? await getFightsByEvent(event.id) : [];
+          const fighterDetails = new Map<string, Fighter>();
+          
+          // Get fighter details for each pick
+          entry.picks.forEach(pick => {
+            const fighter = fighterMap.get(pick.selected_fighter_id);
+            if (fighter) {
+              fighterDetails.set(pick.selected_fighter_id, fighter);
+            }
+          });
+          
+          // Calculate lock time
+          let lockTime: Date | undefined;
+          let isLocked = false;
+          if (event && league) {
+            const eventDate = new Date(event.date_utc);
+            const lockMinutes = 15; // Default 15 minutes before main card
+            lockTime = new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
+            isLocked = new Date() >= lockTime || entry.is_locked;
+          }
+          
+          return {
+            ...entry,
+            event,
+            league: league || null,
+            fights,
+            fighterDetails,
+            lockTime,
+            isLocked
+          };
+        })
+      );
+      
       // Sort by creation date (newest first)
       enrichedTeams.sort((a, b) => {
         const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -94,11 +151,35 @@ export default function MyTeamsPage() {
         return dateB - dateA;
       });
       
+      enrichedPredictions.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
+      
       setTeams(enrichedTeams);
+      setPredictionEntries(enrichedPredictions);
     } catch (error) {
       console.error('Error loading teams:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPredictionEntries = async (userId: string): Promise<PredictionEntry[]> => {
+    try {
+      const q = query(
+        collection(db, 'fantasy_entries'),
+        where('user_id', '==', userId)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as PredictionEntry));
+    } catch (error) {
+      console.error('Error loading prediction entries:', error);
+      return [];
     }
   };
 
@@ -166,16 +247,32 @@ export default function MyTeamsPage() {
     }
   };
 
-  // Filter teams
-  const filteredTeams = teams.filter(team => {
+  // Filter teams based on view mode
+  const displayTeams = viewMode === 'prediction' ? [] : (viewMode === 'salary' ? teams : teams);
+  const displayPredictions = viewMode === 'salary' ? [] : (viewMode === 'prediction' ? predictionEntries : predictionEntries);
+  
+  const filteredTeams = displayTeams.filter(team => {
     if (filter === 'all') return true;
     return team.status === filter;
+  });
+  
+  const filteredPredictions = displayPredictions.filter(entry => {
+    if (filter === 'all') return true;
+    if (filter === 'draft') return !entry.is_locked && !entry.submitted_at;
+    if (filter === 'submitted') return entry.is_locked || entry.submitted_at;
+    if (filter === 'scored') return entry.total_points > 0;
+    return false;
   });
 
   // Group teams by status
   const draftTeams = teams.filter(t => t.status === 'draft');
   const submittedTeams = teams.filter(t => t.status === 'submitted' || t.status === 'locked');
   const scoredTeams = teams.filter(t => t.status === 'scored');
+  
+  // Group predictions by status
+  const draftPredictions = predictionEntries.filter(e => !e.is_locked && !e.submitted_at);
+  const submittedPredictions = predictionEntries.filter(e => e.is_locked || e.submitted_at);
+  const scoredPredictions = predictionEntries.filter(e => e.total_points > 0);
 
   if (loading) {
     return (
@@ -194,31 +291,91 @@ export default function MyTeamsPage() {
       {/* Header */}
       <div className="bg-gradient-to-b from-red-900/20 to-black py-12">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">My Fantasy Teams</h1>
-          <p className="text-gray-300">
-            Manage your fantasy teams and track your performance
-          </p>
+          {/* Navigation Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+            <Link href="/fantasy" className="hover:text-white transition-colors">
+              Fantasy
+            </Link>
+            <span>/</span>
+            <span className="text-white">My Teams</span>
+          </div>
+          
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">My Fantasy Teams</h1>
+              <p className="text-gray-300">
+                Manage your fantasy teams and track your performance
+              </p>
+            </div>
+            <Link href="/fantasy">
+              <button className="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 rounded-lg transition-colors">
+                Create New Team
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* View Mode Toggle */}
+        <div className="flex gap-2 mb-6 bg-gray-900 rounded-lg p-1 inline-flex">
+          <button
+            onClick={() => setViewMode('all')}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              viewMode === 'all'
+                ? 'bg-red-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            All Entries
+          </button>
+          <button
+            onClick={() => setViewMode('prediction')}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              viewMode === 'prediction'
+                ? 'bg-red-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Predictions
+          </button>
+          <button
+            onClick={() => setViewMode('salary')}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              viewMode === 'salary'
+                ? 'bg-red-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Salary Cap (Legacy)
+          </button>
+        </div>
+
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div className="text-3xl font-bold text-white">{teams.length}</div>
-            <div className="text-sm text-gray-400">Total Teams</div>
+            <div className="text-3xl font-bold text-white">
+              {viewMode === 'salary' ? teams.length : viewMode === 'prediction' ? predictionEntries.length : teams.length + predictionEntries.length}
+            </div>
+            <div className="text-sm text-gray-400">Total Entries</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div className="text-3xl font-bold text-yellow-400">{draftTeams.length}</div>
-            <div className="text-sm text-gray-400">Draft Teams</div>
+            <div className="text-3xl font-bold text-yellow-400">
+              {viewMode === 'salary' ? draftTeams.length : viewMode === 'prediction' ? draftPredictions.length : draftTeams.length + draftPredictions.length}
+            </div>
+            <div className="text-sm text-gray-400">Draft Entries</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div className="text-3xl font-bold text-green-400">{submittedTeams.length}</div>
-            <div className="text-sm text-gray-400">Active Teams</div>
+            <div className="text-3xl font-bold text-green-400">
+              {viewMode === 'salary' ? submittedTeams.length : viewMode === 'prediction' ? submittedPredictions.length : submittedTeams.length + submittedPredictions.length}
+            </div>
+            <div className="text-sm text-gray-400">Active Entries</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div className="text-3xl font-bold text-blue-400">{scoredTeams.length}</div>
-            <div className="text-sm text-gray-400">Scored Teams</div>
+            <div className="text-3xl font-bold text-blue-400">
+              {viewMode === 'salary' ? scoredTeams.length : viewMode === 'prediction' ? scoredPredictions.length : scoredTeams.length + scoredPredictions.length}
+            </div>
+            <div className="text-sm text-gray-400">Scored Entries</div>
           </div>
         </div>
 
@@ -239,13 +396,13 @@ export default function MyTeamsPage() {
           ))}
         </div>
 
-        {/* Teams List */}
-        {filteredTeams.length === 0 ? (
+        {/* Teams/Entries List */}
+        {filteredTeams.length === 0 && filteredPredictions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-400 mb-4">
               {filter === 'all' 
-                ? "You haven't created any teams yet"
-                : `No ${filter} teams found`}
+                ? "You haven't created any entries yet"
+                : `No ${filter} entries found`}
             </p>
             <Link
               href="/fantasy"
@@ -256,7 +413,90 @@ export default function MyTeamsPage() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {filteredTeams.map(team => (
+            {/* Display Prediction Entries */}
+            {viewMode !== 'salary' && filteredPredictions.map(entry => (
+              <div
+                key={entry.id}
+                className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-1">
+                        {entry.event?.name || 'Prediction Entry'}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {entry.event && format(new Date(entry.event.date_utc), 'MMM d, yyyy')}
+                        </span>
+                        <span className="text-purple-400 font-medium">
+                          🎯 Prediction Mode
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {entry.isLocked ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-800">
+                          Locked
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-800">
+                          {entry.timeUntilLock ? `Lock in ${entry.timeUntilLock}` : 'Draft'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Prediction Picks Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    {entry.picks.slice(0, 4).map((pick, idx) => {
+                      const fighter = entry.fighterDetails?.get(pick.selected_fighter_id);
+                      return (
+                        <div key={idx} className="bg-gray-800/50 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white font-medium">
+                              {fighter?.name || 'Unknown Fighter'}
+                              {pick.is_captain && <span className="ml-2 text-yellow-400">⭐</span>}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {pick.prediction?.method} {pick.prediction?.round}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {entry.picks.length > 4 && (
+                      <div className="bg-gray-800/50 rounded-lg p-3 flex items-center justify-center text-gray-400">
+                        +{entry.picks.length - 4} more picks
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    {!entry.isLocked && (
+                      <Link
+                        href={`/fantasy/team-builder/${entry.event_id}?entry=${entry.id}`}
+                        className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                      >
+                        Edit Predictions
+                      </Link>
+                    )}
+                    {entry.total_points > 0 && (
+                      <div className="flex-1 bg-blue-900/30 text-blue-400 font-medium py-2 px-4 rounded-lg text-center border border-blue-800">
+                        {entry.total_points} Points
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* Display Salary Cap Teams */}
+            {viewMode !== 'prediction' && filteredTeams.map(team => (
               <div
                 key={team.id}
                 className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors"

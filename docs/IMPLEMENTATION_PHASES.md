@@ -21,38 +21,38 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
    Note: UI components (Card, Button, Badge, etc.) will be built custom or use shadcn/ui during Phase 1
 
 3. **Setup Firebase Project**
-   - Create Firebase project in console
-   - Enable Authentication (Email/Password + Google)
-   - Create Firestore database
-   - Generate service account key
-   - Configure security rules
+- Create Firebase project in console
+- Enable Authentication (Email/Password + Google)
+- Create Firestore database
+- Generate service account key
+- Configure security rules
 
 4. **Project Structure**
-   ```
-   src/
-   ├── app/
-   │   ├── (auth)/
-   │   ├── (main)/
-   │   └── api/
-   ├── components/
-   │   ├── ui/
-   │   ├── layout/
-   │   └── features/
-   ├── lib/
-   │   ├── firebase/
-   │   ├── utils/
-   │   └── hooks/
-   ├── services/
-   ├── store/
-   ├── types/
+```
+src/
+├── app/
+│   ├── (auth)/
+│   ├── (main)/
+│   └── api/
+├── components/
+│   ├── ui/
+│   ├── layout/
+│   └── features/
+├── lib/
+│   ├── firebase/
+│   ├── utils/
+│   └── hooks/
+├── services/
+├── store/
+├── types/
 └── scripts/
     └── seed.ts
-   ```
+```
 
 5. **Environment Configuration**
-   - Setup `.env.local` with Firebase credentials
-   - Configure Vercel project
-   - Setup GitHub repository
+- Setup `.env.local` with Firebase credentials
+- Configure Vercel project
+- Setup GitHub repository
 
 ### Acceptance Criteria
 - [ ] App runs locally with `npm run dev`
@@ -162,59 +162,53 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 
 ---
 
-## Phase 3: Fantasy Core - Team Builder (Days 5-7)
+## Phase 3: Fantasy Core - Prediction Contest (Days 5-7)
 **Duration**: 3 days
 
 ### Tasks
 
 #### 3.1 Fantasy Data Models (3 hours)
-- League schema
-- Team schema
-- Salary schema
-- Scoring rules configuration
+- League schema (global/public/private, main_card_prediction)
+- Entry schema (picks per main-card fight, captain, lock fields)
+- Scoring rules configuration (admin-configurable)
 
 #### 3.2 Fantasy Hub Page (4 hours)
 - `/fantasy` - Landing page
 - Upcoming contests display
 - Join contest CTA
 - Rules explanation
-- User's active teams
+- User's active teams (entries)
 
 #### 3.3 Team Builder UI (8 hours)
-- `/fantasy/team-builder/[eventId]`
-- Fighter selection interface
-- Budget tracker component
-- Team slots (5 fighters)
-- Salary display per fighter
+- `/fantasy/team-builder/[eventId]` (builder)
+- Picks list: select fighter + method + round per fight
+- Captain selection (×1.25) for exactly one fighter (optional)
+- Free-text prediction field per fight (optional)
 - Auto-save functionality
-- Captain selection toggle (1.5x) for one fighter (weekly mode)
 
-#### 3.4 Team Management Logic (6 hours)
-- Budget validation
-- Duplicate prevention
-- Same-fight restriction
-- Draft saving to Firestore
-- Team locking mechanism
-- Time-based lock enforcement
-- Enforce captain uniqueness (max 1)
+#### 3.4 Entry Management Logic (6 hours)
+- One pick per main-card fight enforcement
+- Duplicate-prevention per matchup
+- Lock policy: 15 minutes before main card
+- Lineup visibility: after lock or after first fight (config)
+- Edit count tracking (for tie-breakers)
+- Submission timestamp tracking
 
 #### 3.5 My Teams Page (3 hours)
-- `/fantasy/my-teams`
+- `/fantasy/my-teams` (shows entries)
 - Active teams list
-- Past teams with scores
-- Edit draft teams
-- Delete functionality
+- Past teams (entries) with scores
+- Edit draft entries before lock
+- Delete draft entries
 
 ### Acceptance Criteria
-- [ ] User can select event and enter team builder
-- [ ] Budget tracker updates in real-time
-- [ ] Cannot exceed $10,000 budget
+- [ ] User can select event and enter builder
+- [ ] Must make one pick per main-card fight
 - [ ] Cannot pick both fighters from same matchup
-- [ ] Must select exactly 5 fighters
 - [ ] Draft saves automatically
-- [ ] Teams lock 15 minutes before event
-- [ ] Locked teams cannot be edited
-- [ ] My Teams page shows all user teams
+- [ ] Entries lock 15 minutes before main card
+- [ ] Locked entries cannot be edited
+- [ ] My Teams page shows all user entries
 - [ ] Captain can be assigned to exactly one fighter and reflected in draft state
 
 ---
@@ -229,41 +223,42 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 // services/scoringEngine.ts
 // utils/fantasyScoring.ts
 ```
-- Implement all scoring rules
-- Handle edge cases
-- Underdog multipliers
-- Penalty calculations
-- Apply per-fighter underdog multipliers first; then captain 1.5x; sum; then PPV 1.5x at team level
+- Implement prediction base points
+- Implement performance overlay (weights, subcaps, fight caps, lose multiplier)
+- Early finish boost
+- Rarity multipliers
+- Underdog multipliers (win-only; skip if odds missing)
+- Context & penalties
+- Captain multiplier (×1.25)
+- Application order per spec
 
 #### 4.2 Admin Results Import (3 hours)
 - `/admin/results` - Admin only page
 - JSON upload interface
+- Include technique, narrative tags, closing odds snapshot
 - Results validation
 - Batch processing
 
 #### 4.3 Score Processing (4 hours)
 - Process fight results
-- Calculate points per fighter
-- Update team totals
+- Calculate points per pick
+- Update entry totals
 - Store score events
 - Idempotent processing
-- Event-level PPV multiplier applied if league.settings.apply_ppv_multiplier and event.type === 'PPV'
 
 #### 4.4 Leaderboard (3 hours)
 - `/fantasy/leaderboard/[eventId]`
 - Real-time ranking
-- Score breakdown modal
+- Per-pick accuracy breakdown modal
 - Pagination
 - Search functionality
 
-#### 4.5 One-and-Done Season Overlay (4 hours)
-- Create parallel per-event leagues with `mode = one_and_done` and `team_size = 1`
-- Denormalize `mode` and `event_date_utc` on `fantasy/teams`
-- Enforce no fighter reuse in the current season window at create/update time
-- Season leaderboard: aggregate user totals across season window
-- Tie-breakers: highest single-event score, then earliest total reached
+#### 4.5 Season Overlay (optional) (4 hours)
+- Best-N aggregation configuration per league
+- Season leaderboard: aggregate user totals across window
+- Tie-breakers (season): highest single-event score, then earliest total reached
 
-#### 4.5 Testing & Validation (2 hours)
+#### 4.6 Testing & Validation (2 hours)
 - Unit tests for scoring logic
 - Integration tests for processing
 - Manual testing with various scenarios
@@ -271,17 +266,14 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 ### Acceptance Criteria
 - [ ] Admin can upload results JSON
 - [ ] Points calculate correctly per scoring rules
-- [ ] All bonuses apply properly
-- [ ] Underdog multipliers work
+- [ ] All boosts/multipliers apply in correct order
+- [ ] Underdog multipliers work (win-only)
 - [ ] Penalties deduct correctly
-- [ ] Team totals update after scoring
+- [ ] Entry totals update after scoring
 - [ ] Leaderboard ranks correctly
-- [ ] Tie-breakers work (submission time)
+- [ ] Event tie-breakers work (fewest edits → earliest submission)
 - [ ] Re-running scoring is idempotent
-- [ ] Scoring order matches spec (fighter → captain → team → PPV)
-- [ ] Weekly leaderboards reflect Captain and PPV multipliers
-- [ ] One-and-Done prevents reuse within season window
-- [ ] Season leaderboard computes correctly within start/end dates
+- [ ] Accuracy breakdown shows components in order
 
 ---
 
@@ -399,9 +391,8 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 
 #### 7.1 End-to-End Testing (3 hours)
 - Complete user flow testing
-- Fantasy team creation flow
+- Fantasy contest entry flow
 - Scoring verification
-- Payment flow (if implemented)
 
 #### 7.2 Cross-Browser Testing (2 hours)
 - Chrome
@@ -451,7 +442,7 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 
 #### 8.2 Premium Features (3 hours)
 - Gate premium content
-- Multiple team entries
+- Multiple contest entries per event (if enabled)
 - Advanced statistics
 - Ad removal
 
@@ -528,7 +519,7 @@ This document outlines the step-by-step implementation plan for Fighter Fantasy,
 
 ### Business Metrics
 - 100+ active users in first month
-- 50+ fantasy teams per event
+- 50+ fantasy entries per event
 - Premium conversion > 5%
 - User satisfaction > 4/5
 

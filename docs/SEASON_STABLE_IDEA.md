@@ -7,7 +7,7 @@ Provide always-on engagement by letting users draft and manage a roster (stable)
 
 ## Core Rules (Proposed)
 - Roster: 10 active fighters + 3 bench + 1 IR slot (injury/inactive)
-- Scoring: Use existing per-fight Fantasy Scoring Blueprint; PPV events retain 1.5x team multiplier
+- Scoring: Use the Main-Card Prediction Mode scoring blueprint (prediction base + capped performance + boosts/multipliers). No event-level PPV multipliers.
 - Lineup counting (option): Count best 5 scores per event from roster to smooth divisional activity
 - Ownership (MVP): Non-exclusive global player pool (no conflicts); private exclusive drafts later
 - Swaps: 6 season “swap tokens” to replace a roster fighter with a free agent (before event lock)
@@ -24,8 +24,8 @@ Provide always-on engagement by letting users draft and manage a roster (stable)
 
 ## Data/Tech Notes (Non-binding)
 - Mode name (if implemented): `stable_roto` (to be confirmed)
-- Could reuse existing `fantasy.leagues` and `fantasy.teams` with minimal additions
-- Aggregation: season leaderboard sums team totals across season window; same event lock rules apply
+- Could reuse `fantasy.leagues` and `fantasy.entries` with season constructs and minimal additions
+- Aggregation: season leaderboard sums entry totals across season window; same lock rules apply
 - No immediate schema change required for the idea; details to be finalized if prioritized
 
 ## Open Questions
@@ -35,4 +35,4 @@ Provide always-on engagement by letting users draft and manage a roster (stable)
 - Should Captains be allowed in this mode (default: no)?
 
 ## Status
-Deferred. Do not implement until core MVP (weekly salary-cap, PPV multiplier, Captain, One-and-Done) is complete and stable. 
+Deferred. Do not implement until the Main-Card Prediction Mode MVP is complete and stable. 
