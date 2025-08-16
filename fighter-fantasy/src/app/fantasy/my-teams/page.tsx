@@ -8,6 +8,7 @@ import { FantasyTeam, Event, Fighter, League, Fight } from '@/types';
 import { getUserTeams, deleteTeam, getLeague } from '@/services/fantasyService';
 import { getEvents, getFighters, getFightsByEvent } from '@/services/dataService';
 import { format, differenceInSeconds } from 'date-fns';
+import { toDate } from '@/lib/utils';
 import type { PredictionEntry, PredictionLeague } from '@/types/prediction';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
@@ -644,11 +645,17 @@ export default function MyTeamsPage() {
                 <div className="bg-gray-800/50 px-6 py-3 border-t border-gray-800">
                   <div className="flex justify-between text-xs text-gray-500">
                     <div>
-                      Created: {team.created_at ? format(new Date(team.created_at), 'MMM d, yyyy h:mm a') : 'Unknown'}
+                      Created: {(() => {
+                        const date = toDate(team.created_at);
+                        return date ? format(date, 'MMM d, yyyy h:mm a') : 'Unknown';
+                      })()}
                     </div>
                     {team.submitted_at && (
                       <div>
-                        Submitted: {format(new Date(team.submitted_at), 'MMM d, yyyy h:mm a')}
+                        Submitted: {(() => {
+                          const date = toDate(team.submitted_at);
+                          return date ? format(date, 'MMM d, yyyy h:mm a') : 'Unknown';
+                        })()}
                       </div>
                     )}
                   </div>

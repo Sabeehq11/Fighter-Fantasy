@@ -104,10 +104,52 @@ export async function getLeague(leagueId: string): Promise<League | null> {
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
-      return {
+      const data = docSnap.data();
+      console.log('📄 Raw league data from Firestore:', data);
+      
+      // Create league object with proper structure
+      const league: League = {
         id: docSnap.id,
-        ...docSnap.data()
+        ...data
       } as League;
+      
+      // Ensure settings exist and have required fields
+      if (!league.settings) {
+        console.log('⚠️ League settings missing in Firestore, adding defaults');
+        league.settings = {
+          budget: 10000,
+          team_size: 5,
+          max_from_same_fight: 1,
+          lock_time_minutes_before: 15,
+          allow_captain: true,
+          captain_multiplier: 1.5,
+          apply_ppv_multiplier: false,
+          ppv_multiplier: 1.5
+        };
+      } else {
+        // Ensure all required settings fields exist
+        const defaultSettings = {
+          budget: 10000,
+          team_size: 5,
+          max_from_same_fight: 1,
+          lock_time_minutes_before: 15,
+          allow_captain: true,
+          captain_multiplier: 1.5,
+          apply_ppv_multiplier: false,
+          ppv_multiplier: 1.5
+        };
+        
+        // Fill in any missing settings
+        Object.keys(defaultSettings).forEach(key => {
+          if (league.settings[key as keyof typeof defaultSettings] === undefined) {
+            console.log(`⚠️ League setting '${key}' undefined, using default:`, defaultSettings[key as keyof typeof defaultSettings]);
+            (league.settings as any)[key] = defaultSettings[key as keyof typeof defaultSettings];
+          }
+        });
+      }
+      
+      console.log('✅ League loaded with settings:', league.settings);
+      return league;
     }
     return null;
   } catch (error) {
@@ -500,6 +542,15 @@ export async function getTeam(teamId: string): Promise<FantasyTeam | null> {
 export async function saveTeam(team: Partial<FantasyTeam>): Promise<string | null> {
   try {
     const teamId = team.id || `team_${team.user_id}_${team.event_id}_${Date.now()}`;
+    console.log('💾 Saving team with ID:', teamId);
+    console.log('Team data:', {
+      user_id: team.user_id,
+      league_id: team.league_id,
+      event_id: team.event_id,
+      status: team.status,
+      picks_count: team.picks?.length
+    });
+    
     const teamData = {
       ...team,
       id: teamId,
@@ -511,36 +562,53 @@ export async function saveTeam(team: Partial<FantasyTeam>): Promise<string | nul
     }
     
     await setDoc(doc(db, 'teams', teamId), teamData);
+    console.log('✅ Team saved successfully');
     return teamId;
-  } catch (error) {
-    console.error('Error saving team:', error);
+  } catch (error: any) {
+    console.error('❌ Error saving team:', error);
+    console.error('Error code:', error?.code);
+    console.error('Error message:', error?.message);
     return null;
   }
 }
 
 export async function submitTeam(teamId: string): Promise<boolean> {
   try {
+    console.log('📮 Submitting team with ID:', teamId);
+    
+    // First, update the team status
     await updateDoc(doc(db, 'teams', teamId), {
       status: 'submitted',
       submitted_at: serverTimestamp(),
       updated_at: serverTimestamp()
     });
     
-    // Update league entry count
-    const team = await getTeam(teamId);
-    if (team) {
-      const leagueRef = doc(db, 'leagues', team.league_id);
-      const league = await getDoc(leagueRef);
-      if (league.exists()) {
-        await updateDoc(leagueRef, {
-          total_entries: (league.data().total_entries || 0) + 1
-        });
+    console.log('✅ Team status updated to submitted');
+    
+    // Try to update league entry count, but don't fail if we can't
+    try {
+      const team = await getTeam(teamId);
+      if (team) {
+        const leagueRef = doc(db, 'leagues', team.league_id);
+        const league = await getDoc(leagueRef);
+        if (league.exists()) {
+          // This might fail due to permissions, but that's okay
+          await updateDoc(leagueRef, {
+            total_entries: (league.data().total_entries || 0) + 1
+          });
+          console.log('✅ League entry count updated');
+        }
       }
+    } catch (leagueError) {
+      // Don't fail the submission if we can't update the league count
+      console.log('⚠️ Could not update league entry count (permission denied, but team still submitted):', leagueError);
     }
     
     return true;
-  } catch (error) {
-    console.error('Error submitting team:', error);
+  } catch (error: any) {
+    console.error('❌ Error submitting team:', error);
+    console.error('Error code:', error?.code);
+    console.error('Error message:', error?.message);
     return false;
   }
 }
@@ -570,18 +638,53 @@ export function validateTeam(
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
+  console.log('🔍 validateTeam called with:', {
+    picksCount: picks.length,
+    leagueId: league?.id,
+    leagueSettings: league?.settings,
+    teamSize: league?.settings?.team_size,
+    budget: league?.settings?.budget,
+    fightsCount: fights.length
+  });
+  
+  // Check if league and settings exist
+  if (!league) {
+    console.error('❌ League is undefined');
+    errors.push('League configuration is missing');
+    return { valid: false, errors };
+  }
+  
+  if (!league.settings) {
+    console.error('❌ League settings are undefined');
+    errors.push('League settings are missing');
+    return { valid: false, errors };
+  }
+  
   // Check team size
-  if (picks.length !== league.settings.team_size) {
-    errors.push(`Team must have exactly ${league.settings.team_size} fighters`);
+  const teamSize = league.settings.team_size;
+  console.log(`📊 Team size check: ${picks.length} picks vs ${teamSize} required`);
+  
+  if (teamSize === undefined || teamSize === null) {
+    console.error('❌ team_size is undefined in league settings:', league.settings);
+    errors.push('Team size configuration is missing');
+  } else if (picks.length !== teamSize) {
+    errors.push(`Team must have exactly ${teamSize} fighters`);
   }
   
   // Check budget
+  const budget = league.settings.budget;
   const totalSalary = picks.reduce((sum, pick) => sum + pick.salary, 0);
-  if (totalSalary > league.settings.budget) {
-    errors.push(`Team exceeds budget of $${league.settings.budget}`);
+  console.log(`💰 Budget check: $${totalSalary} used vs $${budget} budget`);
+  
+  if (budget === undefined || budget === null) {
+    console.error('❌ budget is undefined in league settings:', league.settings);
+    errors.push('Budget configuration is missing');
+  } else if (totalSalary > budget) {
+    errors.push(`Team exceeds budget of $${budget}`);
   }
   
   // Check same fight restriction
+  console.log('🥊 Checking same fight restriction...');
   const fightMap = new Map<string, string[]>();
   fights.forEach(fight => {
     fightMap.set(fight.fighter_a_id, [fight.id, fight.fighter_b_id]);
@@ -594,6 +697,7 @@ export function validateTeam(
     if (fightInfo) {
       const [fightId] = fightInfo;
       if (fightsUsed.has(fightId)) {
+        console.log(`❌ Multiple fighters from same fight detected: ${fightId}`);
         errors.push('Cannot select both fighters from the same fight');
       }
       fightsUsed.add(fightId);
@@ -603,6 +707,8 @@ export function validateTeam(
   // Check captain uniqueness (if applicable)
   if (league.settings.allow_captain) {
     const captainCount = picks.filter(p => p.is_captain).length;
+    console.log(`⭐ Captain check: ${captainCount} captains selected`);
+    
     if (captainCount > 1) {
       errors.push('Only one fighter can be selected as captain');
     }
@@ -610,9 +716,12 @@ export function validateTeam(
   
   // Check for one-and-done mode fighter reuse
   if (league.mode === 'one_and_done' && league.season) {
+    console.log('🔄 One-and-done mode check (not implemented yet)');
     // This would need to check against previously used fighters in the season
     // We'll implement this when we have the full season tracking
   }
+  
+  console.log(`✅ Validation complete. Valid: ${errors.length === 0}, Errors:`, errors);
   
   return {
     valid: errors.length === 0,

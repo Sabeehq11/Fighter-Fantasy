@@ -21,12 +21,25 @@ service cloud.firestore {
     match /config/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
     // Legacy fantasy collections
-    match /leagues/{leagueId} { allow read: if true; allow create: if isAuthenticated(); allow update, delete: if isAdmin(); }
+    match /leagues/{leagueId} { 
+      allow read: if true; 
+      allow create: if isAuthenticated(); 
+      allow update: if isAdmin() || (isAuthenticated() && request.resource.data.keys().hasOnly(['total_entries']));
+      allow delete: if isAdmin(); 
+    }
     match /salaries/{salaryId} { allow read: if true; allow write: if isAdmin(); }
     match /teams/{teamId} {
       allow read: if true;
       allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.user_id == request.auth.uid && (resource.data.status == 'draft' || resource.data.status == 'submitted');
+      // Allow update if user owns the team and either:
+      // 1. The team is currently in draft status (can edit draft)
+      // 2. The team is being changed from draft to submitted (submitting)
+      // 3. The team is already submitted (can update submitted teams before lock)
+      allow update: if isAuthenticated() && 
+                      resource.data.user_id == request.auth.uid && 
+                      (resource.data.status == 'draft' || 
+                       (resource.data.status == 'draft' && request.resource.data.status == 'submitted') ||
+                       resource.data.status == 'submitted');
       allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid && resource.data.status == 'draft';
     }
     match /fantasy_teams/{teamId} { allow read: if true; allow write: if isAuthenticated(); }

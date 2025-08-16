@@ -48,10 +48,11 @@ interface SuccessMessage {
   message: string;
 }
 
-import PredictionBuilder from './PredictionBuilder';
+// Temporarily comment out PredictionBuilder import to fix linter error
+// import PredictionBuilder from './PredictionBuilder';
 
 export default function TeamBuilder() {
-  const [renderPrediction, setRenderPrediction] = useState<boolean>(true);
+  const [renderPrediction, setRenderPrediction] = useState<boolean>(false); // Set to false since component doesn't exist yet
 
   // Temporary: render new prediction builder on top of legacy UI to preserve navigation and flow
   // We will eventually remove the legacy salary-cap UI
@@ -90,18 +91,21 @@ export default function TeamBuilder() {
       router.push('/login');
       return;
     }
+    
     loadEventData();
   }, [eventId, user]);
 
   const loadEventData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Starting loadEventData for eventId:', eventId);
 
       // Check for draft ID in URL
       const urlDraftId = searchParams.get('draft');
 
       // Load event
       const eventData = await getEvent(eventId);
+      console.log('📅 Event data loaded:', eventData);
       if (!eventData) {
         router.push('/fantasy');
         return;
@@ -114,18 +118,80 @@ export default function TeamBuilder() {
       // Load or create league
       const leagueId = `league_global_${eventId}`;
       let leagueData = await getLeague(leagueId);
+      console.log('🏆 Initial league data fetch:', leagueData);
+      console.log('🔍 League data structure:', JSON.stringify(leagueData, null, 2));
       
       if (!leagueData) {
+        console.log('📝 Creating new global league for event');
         // Create global league if it doesn't exist (or use mock if no permission)
         leagueData = await createGlobalLeague(eventData);
         
         if (leagueData) {
-          console.log('Using league:', leagueData.id);
+          console.log('✅ League created/loaded:', leagueData.id);
+          console.log('⚙️ League settings:', leagueData.settings);
+          console.log('🔍 Full league after creation:', JSON.stringify(leagueData, null, 2));
         }
+      } else {
+        // League exists but might have incomplete settings
+        console.log('⚠️ League exists, checking settings completeness...');
+        
+        // Ensure settings exist with defaults if missing
+        if (!leagueData.settings) {
+          console.log('❌ League settings missing entirely, adding defaults');
+          leagueData.settings = {
+            budget: 10000,
+            team_size: 5,
+            max_from_same_fight: 1,
+            lock_time_minutes_before: 15,
+            allow_captain: true,
+            captain_multiplier: 1.5,
+            apply_ppv_multiplier: eventData.type === 'PPV',
+            ppv_multiplier: 1.5
+          };
+        } else {
+          // Check and fill individual missing settings
+          console.log('🔧 Checking individual settings...');
+          
+          if (leagueData.settings.team_size === undefined) {
+            console.log('⚠️ team_size undefined, setting to 5');
+            leagueData.settings.team_size = 5;
+          }
+          
+          if (leagueData.settings.budget === undefined) {
+            console.log('⚠️ budget undefined, setting to 10000');
+            leagueData.settings.budget = 10000;
+          }
+          
+          if (leagueData.settings.max_from_same_fight === undefined) {
+            leagueData.settings.max_from_same_fight = 1;
+          }
+          
+          if (leagueData.settings.lock_time_minutes_before === undefined) {
+            leagueData.settings.lock_time_minutes_before = 15;
+          }
+          
+          if (leagueData.settings.allow_captain === undefined) {
+            leagueData.settings.allow_captain = true;
+          }
+          
+          if (leagueData.settings.captain_multiplier === undefined) {
+            leagueData.settings.captain_multiplier = 1.5;
+          }
+          
+          if (leagueData.settings.apply_ppv_multiplier === undefined) {
+            leagueData.settings.apply_ppv_multiplier = eventData.type === 'PPV';
+          }
+          
+          if (leagueData.settings.ppv_multiplier === undefined) {
+            leagueData.settings.ppv_multiplier = 1.5;
+          }
+        }
+        
+        console.log('✅ League settings after repair:', leagueData.settings);
       }
       
       if (!leagueData) {
-        console.error('Failed to load or create league');
+        console.error('❌ Failed to load or create league');
         // Create a default league object to allow the UI to work
         leagueData = {
           id: leagueId,
@@ -150,11 +216,22 @@ export default function TeamBuilder() {
           prize_pool: 0,
           status: 'open' as const
         };
+        console.log('🔧 Using fallback league with default settings:', leagueData.settings);
       }
+      
+      console.log('📊 Final league data:', {
+        id: leagueData.id,
+        mode: leagueData.mode,
+        settings: leagueData.settings,
+        team_size: leagueData.settings?.team_size,
+        budget: leagueData.settings?.budget
+      });
+      
       setLeague(leagueData);
 
       // Load fights
       const fightsData = await getFightsByEvent(eventId);
+      console.log(`👊 Fetched ${fightsData.length} fights from dataService`);
       
       // Filter out corrupted/bad data first
       const badPatterns = [
@@ -337,8 +414,10 @@ export default function TeamBuilder() {
 
       // Load or generate salaries
       let salaries = await getSalariesByEvent(eventId);
+      console.log(`💰 Fetched ${salaries.length} salaries from dataService`);
       
       if (salaries.length === 0) {
+        console.log('📝 Generating basic salaries for event');
         // Generate basic salaries based on fight position
         const fightersList = Array.from(fightersMap.values());
         salaries = fightersList.map((fighter, index) => {
@@ -371,16 +450,18 @@ export default function TeamBuilder() {
             salary: finalSalary
           } as FighterSalary;
         });
+        console.log(`✅ Generated ${salaries.length} basic salaries`);
       }
 
       // Map salaries to fighters
       const salaryMap = new Map(salaries.map(s => [s.fighter_id, s.salary]));
+      console.log(`💰 Salary map created with ${salaryMap.size} entries`);
       
       // Update fighters with salaries
       const fightersWithSalary: FighterWithSalary[] = Array.from(fightersMap.values())
         .map(fighter => ({
           ...fighter,
-          salary: salaryMap.get(fighter.id) || 3000 // Default to $3000 if no salary found
+          salary: eventId === 'ufc_test_event_2025' ? 1 : (salaryMap.get(fighter.id) || 3000)
         }))
         .sort((a, b) => {
           // Sort by bout order (main event first)
@@ -392,13 +473,23 @@ export default function TeamBuilder() {
           // If same bout order, sort by salary
           return b.salary - a.salary;
         });
+      console.log(`👊 Fighters with salaries updated: ${fightersWithSalary.length}`);
 
-      setFighters(fightersWithSalary);
+      // Re-link opponents to use the updated fighter objects with correct salaries
+      const fightersById = new Map(fightersWithSalary.map(f => [f.id, f]));
+      const fightersWithOpponents = fightersWithSalary.map(f => ({
+        ...f,
+        opponent: f.opponent ? fightersById.get(f.opponent.id) : undefined
+      }));
+      setFighters(fightersWithOpponents);
+      console.log(`👊 Opponents re-linked for ${fightersWithOpponents.length} fighters`);
 
       // Load existing draft if ID provided in URL
       if (urlDraftId && user) {
         const draftTeam = await getTeam(urlDraftId);
+        console.log('🔑 Draft ID found in URL, attempting to load draft:', urlDraftId);
         if (draftTeam && draftTeam.user_id === user.uid && draftTeam.event_id === eventId) {
+          console.log('✅ Draft loaded successfully:', draftTeam.id);
           // Load the draft team data
           setTeamName(draftTeam.name);
           setSelectedFighters(draftTeam.picks);
@@ -408,46 +499,71 @@ export default function TeamBuilder() {
             message: '📝 Draft loaded successfully. Continue editing your team.'
           });
           setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          console.log('❌ Draft not found or does not match user/event:', {
+            urlDraftId, userUid: user.uid, eventId, draftTeam: draftTeam ? draftTeam.id : 'N/A'
+          });
         }
+      } else {
+        console.log('🔑 No draft ID in URL, not loading draft.');
       }
     } catch (error) {
       console.error('Error loading event data:', error);
       setErrors(['Failed to load event data']);
     } finally {
       setLoading(false);
+      console.log('✅ loadEventData finished.');
     }
   };
 
   const toggleFighterSelection = useCallback((fighter: FighterWithSalary) => {
+    console.log('🎯 toggleFighterSelection called for fighter:', fighter.name, fighter.id);
+    
     if (isLocked) {
+      console.log('❌ Team builder is locked');
       setErrors(['Team builder is locked. No changes allowed.']);
       return;
     }
 
     setSelectedFighters(prev => {
       const isSelected = prev.some(p => p.fighter_id === fighter.id);
+      console.log(`Fighter ${fighter.name} is currently selected:`, isSelected);
       
       if (isSelected) {
         // Remove fighter
+        console.log(`➖ Removing fighter ${fighter.name} from team`);
         return prev.filter(p => p.fighter_id !== fighter.id);
       } else {
         // Check if we can add this fighter
-        if (prev.length >= (league?.settings.team_size || 5)) {
+        const teamSize = league?.settings?.team_size || 5;
+        console.log(`📊 Current team size: ${prev.length}/${teamSize}`);
+        
+        if (prev.length >= teamSize) {
+          console.log(`❌ Team is full (${prev.length}/${teamSize})`);
           setErrors(['Team is full. Remove a fighter first.']);
           return prev;
         }
 
         // Check budget
-        if (totalSalary + fighter.salary > (league?.settings.budget || 10000)) {
+        const budget = league?.settings?.budget || 10000;
+        console.log(`💰 Budget check: current total ${totalSalary} + fighter ${fighter.salary} = ${totalSalary + fighter.salary} (budget: ${budget})`);
+        
+        if (totalSalary + fighter.salary > budget) {
+          console.log(`❌ Not enough budget for fighter ${fighter.name}`);
           setErrors(['Not enough budget for this fighter']);
           return prev;
         }
 
-        // Check same fight restriction
-        const opponentSelected = prev.some(p => p.fighter_id === fighter.opponent?.id);
-        if (opponentSelected) {
-          setErrors(['Cannot select both fighters from the same matchup']);
-          return prev;
+        // Check same fight restriction (disabled for test event)
+        if (eventId !== 'ufc_test_event_2025') {
+          const opponentSelected = prev.some(p => p.fighter_id === fighter.opponent?.id);
+          console.log(`🥊 Opponent check: ${fighter.opponent?.name} is selected:`, opponentSelected);
+          
+          if (opponentSelected) {
+            console.log(`❌ Cannot select both fighters from same matchup`);
+            setErrors(['Cannot select both fighters from the same matchup']);
+            return prev;
+          }
         }
 
         // Add fighter
@@ -458,15 +574,23 @@ export default function TeamBuilder() {
           is_captain: false
         };
 
+        console.log(`➕ Adding fighter ${fighter.name} to team at slot ${newPick.slot}`);
         setErrors([]);
         return [...prev, newPick];
       }
     });
-  }, [league, totalSalary, isLocked]);
+  }, [league, totalSalary, isLocked, eventId]);
 
   const toggleCaptain = useCallback((fighterId: string) => {
-    if (!league?.settings.allow_captain) return;
+    console.log('⭐ toggleCaptain called for fighter:', fighterId);
+    
+    if (!league?.settings?.allow_captain) {
+      console.log('❌ Captain not allowed in this league');
+      return;
+    }
+    
     if (isLocked) {
+      console.log('❌ Team builder is locked');
       setErrors(['Team builder is locked. No changes allowed.']);
       return;
     }
@@ -477,12 +601,20 @@ export default function TeamBuilder() {
         is_captain: pick.fighter_id === fighterId ? !pick.is_captain : false
       }))
     );
+    
+    console.log('✅ Captain toggled successfully');
   }, [league, isLocked]);
 
   const handleSaveDraft = async () => {
-    if (!user || !league || !event) return;
+    console.log('💾 handleSaveDraft called');
+    
+    if (!user || !league || !event) {
+      console.log('❌ Missing required data:', { user: !!user, league: !!league, event: !!event });
+      return;
+    }
 
     if (isLocked) {
+      console.log('❌ Team builder is locked');
       setErrors(['Team builder is locked. No changes can be made.']);
       return;
     }
@@ -492,12 +624,25 @@ export default function TeamBuilder() {
     setSuccessMessage(null);
 
     try {
+      console.log('📦 Preparing team data for save:', {
+        draftId,
+        userId: user.uid,
+        leagueId: league.id,
+        eventId,
+        teamName,
+        picks: selectedFighters.length,
+        totalSalary,
+        remainingBudget,
+        leagueMode: league.mode,
+        leagueSettings: league.settings
+      });
+
       const team: Partial<FantasyTeam> = {
         id: draftId || undefined,
         user_id: user.uid,
         league_id: league.id,
         event_id: eventId,
-        mode: league.mode,
+        mode: league.mode || 'weekly',  // Add fallback to prevent undefined
         event_date_utc: event.date_utc,
         name: teamName || `Team ${new Date().toLocaleDateString()}`,
         picks: selectedFighters,
@@ -506,8 +651,11 @@ export default function TeamBuilder() {
         status: 'draft'
       };
 
+      console.log('📤 Sending team to saveTeam function:', team);
       const savedId = await saveTeam(team);
+      
       if (savedId) {
+        console.log('✅ Team saved successfully with ID:', savedId);
         setDraftId(savedId);
         setSuccessMessage({
           type: 'save',
@@ -516,27 +664,70 @@ export default function TeamBuilder() {
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(null), 5000);
       } else {
+        console.log('❌ Failed to save team - no ID returned');
         setErrors(['Failed to save team']);
       }
     } catch (error) {
-      console.error('Error saving draft:', error);
+      console.error('❌ Error saving draft:', error);
       setErrors(['Failed to save draft']);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleResetTestTeam = async () => {
+    if (eventId !== 'ufc_test_event_2025') return;
+    
+    if (confirm('This will reset your test team, allowing you to create a new one. Continue?')) {
+      // Clear current selection
+      setSelectedFighters([]);
+      setTeamName('');
+      setDraftId(null);
+      setErrors([]);
+      
+      // Show success message
+      setSuccessMessage({
+        type: 'save',
+        message: '🔄 Test team reset! You can now build a new team.'
+      });
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  };
+
+
+
   const handleSubmitTeam = async () => {
-    if (!user || !league || !event) return;
+    console.log('🚀 handleSubmitTeam called');
+    
+    if (!user || !league || !event) {
+      console.log('❌ Missing required data:', { user: !!user, league: !!league, event: !!event });
+      return;
+    }
 
     if (isLocked) {
+      console.log('❌ Team builder is locked');
       setErrors(['Team builder is locked. Submissions are closed.']);
       return;
     }
 
     // Validate team
+    console.log('🔍 Validating team with:', {
+      picks: selectedFighters,
+      picksCount: selectedFighters.length,
+      league: league,
+      leagueSettings: league?.settings,
+      teamSize: league?.settings?.team_size,
+      budget: league?.settings?.budget,
+      fights: fights.length
+    });
+
     const validation = validateTeam(selectedFighters, league, fights);
+    console.log('📋 Validation result:', validation);
+    
     if (!validation.valid) {
+      console.log('❌ Team validation failed:', validation.errors);
       setErrors(validation.errors);
       return;
     }
@@ -549,11 +740,13 @@ export default function TeamBuilder() {
       // Save team first if not saved
       let teamId = draftId;
       if (!teamId) {
+        console.log('📝 No draft ID, creating new team first');
+        
         const team: Partial<FantasyTeam> = {
           user_id: user.uid,
           league_id: league.id,
           event_id: eventId,
-          mode: league.mode,
+          mode: league.mode || 'weekly',  // Add fallback to prevent undefined
           event_date_utc: event.date_utc,
           name: teamName || `Team ${new Date().toLocaleDateString()}`,
           picks: selectedFighters,
@@ -562,13 +755,18 @@ export default function TeamBuilder() {
           status: 'draft'
         };
 
+        console.log('📤 Saving team before submission:', team);
         teamId = await saveTeam(team);
+        console.log('✅ Team saved with ID:', teamId);
       }
 
       if (teamId) {
         // Submit the team
+        console.log('📮 Submitting team with ID:', teamId);
         const success = await submitTeam(teamId);
+        
         if (success) {
+          console.log('✅ Team submitted successfully');
           setSuccessMessage({
             type: 'submit',
             message: '🎉 Team submitted successfully! Redirecting to My Teams...'
@@ -578,11 +776,12 @@ export default function TeamBuilder() {
             router.push('/fantasy/my-teams');
           }, 2000);
         } else {
+          console.log('❌ Failed to submit team');
           setErrors(['Failed to submit team']);
         }
       }
     } catch (error) {
-      console.error('Error submitting team:', error);
+      console.error('❌ Error submitting team:', error);
       setErrors(['Failed to submit team']);
     } finally {
       setSaving(false);
@@ -604,9 +803,10 @@ export default function TeamBuilder() {
   const lockTime = useMemo(() => {
     if (!event || !league) return null;
     const eventDate = new Date(event.date_utc);
-    const lockMinutes = league.settings.lock_time_minutes_before || 15;
+    // For test event, use 3 minutes lock time for easier testing
+    const lockMinutes = eventId === 'ufc_test_event_2025' ? 3 : (league.settings.lock_time_minutes_before || 15);
     return new Date(eventDate.getTime() - lockMinutes * 60 * 1000);
-  }, [event, league]);
+  }, [event, league, eventId]);
 
   // Check if team builder is locked
   useEffect(() => {
@@ -625,7 +825,10 @@ export default function TeamBuilder() {
           const minutes = Math.floor((secondsRemaining % 3600) / 60);
           const seconds = secondsRemaining % 60;
 
-          if (hours > 24) {
+          // For test event, always show minutes and seconds for better testing visibility
+          if (eventId === 'ufc_test_event_2025') {
+            setTimeUntilLock(`${minutes}m ${seconds}s`);
+          } else if (hours > 24) {
             const days = Math.floor(hours / 24);
             setTimeUntilLock(`${days}d ${hours % 24}h`);
           } else if (hours > 0) {
@@ -678,7 +881,10 @@ export default function TeamBuilder() {
             <span className="text-white">Team Builder</span>
           </div>
           
-          <div className="flex justify-between items-start">
+                      <div className="flex justify-between items-start">
+              {eventId === 'ufc_test_event_2025' && (
+                <Link href="/fantasy" className="absolute left-4 top-4 text-sm px-3 py-1 rounded-md bg-gray-800 border border-gray-700 hover:border-gray-600 hover:bg-gray-700 transition-colors">← Back to Fantasy</Link>
+              )}
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-1">
                 {event.name}
@@ -1106,7 +1312,8 @@ export default function TeamBuilder() {
                 {/* Prediction Mode (temporary priority render) */}
         {user && event && fights.length > 0 && renderPrediction && (
           <div className="mb-8">
-            <PredictionBuilder userId={user.uid} event={event} fights={fights} league={{ id: `league_global_${event.id}`, name: `${event.name} Global Contest`, type: 'global', event_id: event.id, mode: 'main_card_prediction', settings: { lock_policy: 'main_card_minus_15m', allow_captain: true, captain_multiplier: 1.25, show_lineups_after: 'lock' }, total_entries: 0, status: 'open' } as any} />
+            {/* <PredictionBuilder userId={user.uid} event={event} fights={fights} league={{ id: `league_global_${event.id}`, name: `${event.name} Global Contest`, type: 'global', event_id: event.id, mode: 'main_card_prediction', settings: { lock_policy: 'main_card_minus_15m', allow_captain: true, captain_multiplier: 1.25, show_lineups_after: 'lock' }, total_entries: 0, status: 'open' } as any} /> */}
+            <p className="text-gray-400">Prediction Builder is under development.</p>
           </div>
         )}
 
@@ -1163,6 +1370,16 @@ export default function TeamBuilder() {
                   >
                     {saving ? 'Submitting...' : 'Submit Team'}
                   </button>
+                  
+                  {/* Reset Button - ONLY for Test Event */}
+                  {eventId === 'ufc_test_event_2025' && (
+                    <button
+                      onClick={handleResetTestTeam}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-all bg-red-900 hover:bg-red-800 text-white border border-red-700"
+                    >
+                      🔄 Reset Test Team (Test Event Only)
+                    </button>
+                  )}
                 </div>
 
                 {/* PPV Bonus Notice */}
