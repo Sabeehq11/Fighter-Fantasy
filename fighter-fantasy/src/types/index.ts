@@ -251,7 +251,7 @@ export interface P4PRankings {
 export interface League {
   id: string;
   name: string;
-  type: 'global' | 'private';
+  type: 'global' | 'private' | 'public';  // Added 'public' type
   mode: 'weekly' | 'one_and_done';
   event_id: string;
   
@@ -275,7 +275,7 @@ export interface League {
   prize_pool: number;
   
   // Status
-  status: 'draft' | 'open' | 'locked' | 'scoring' | 'completed';
+  status: 'draft' | 'open' | 'locked' | 'scoring' | 'completed' | 'deleted';
   
   // Season (for one-and-done)
   season?: {
@@ -284,10 +284,20 @@ export interface League {
     name: string;
   };
   
+  // Private/Public League Fields
+  join_code?: string;              // For private leagues
+  description?: string;            // League description
+  members?: string[];              // User IDs of members
+  admins?: string[];               // User IDs of admins
+  invited_users?: string[];        // User IDs of invited users (private leagues)
+  is_public_joinable?: boolean;    // For public leagues
+  is_featured?: boolean;           // For featured public leagues
+  
   // Metadata
   created_at?: any;
   updated_at?: any;
   created_by?: string;
+  deleted_at?: any;                // For soft delete
 }
 
 // Fighter Salary Model

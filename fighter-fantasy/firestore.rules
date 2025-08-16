@@ -9,8 +9,10 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow create: if isOwner(userId) || isAuthenticated();  // Allow creation for new users
+      allow update: if isOwner(userId) || 
+        // Allow updating leagues array when joining/leaving leagues
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leagues', 'owned_leagues']));
       allow delete: if false;
     }
 
@@ -24,8 +26,15 @@ service cloud.firestore {
     match /leagues/{leagueId} { 
       allow read: if true; 
       allow create: if isAuthenticated(); 
-      allow update: if isAdmin() || (isAuthenticated() && request.resource.data.keys().hasOnly(['total_entries']));
-      allow delete: if isAdmin(); 
+      allow update: if isAdmin() || 
+        // Owner can update
+        (isAuthenticated() && resource.data.created_by == request.auth.uid) ||
+        // Members can join/leave
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'total_entries', 'updated_at'])) ||
+        // Legacy total_entries update
+        (isAuthenticated() && request.resource.data.keys().hasOnly(['total_entries']));
+      allow delete: if isAdmin() || 
+        (isAuthenticated() && resource.data.created_by == request.auth.uid); 
     }
     match /salaries/{salaryId} { allow read: if true; allow write: if isAdmin(); }
     match /teams/{teamId} {
